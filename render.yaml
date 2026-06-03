@@ -1,0 +1,22 @@
+# Render Blueprint — free single-service hosting for Book Ends.
+# Backend builds + serves the frontend, so ONE free web service runs everything.
+# Secret values are requested by Render during setup; do not hardcode them here.
+services:
+  - type: web
+    name: book-ends
+    runtime: node
+    plan: free
+    buildCommand: npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm --prefix backend install --omit=dev
+    startCommand: cd backend && node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: "8h"
+      - key: ALLOWED_ORIGINS
+        value: "*"

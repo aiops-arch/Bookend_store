@@ -1,0 +1,40 @@
+node_modules/
+.env
+.env.production
+.env.*.local
+dist/
+logs/
+*.log
+pgdata/
+
+# unused side-projects (not part of the deployed app)
+source/
+storehub-complete/
+remotion-video/
+*.PNG
+
+# large / local-only artifacts (don't push these)
+*.tar.gz
+*.db
+*.rvf
+*.rvf.lock
+backups/
+invoices/inbox/
+invoices/done/
+invoices/failed/
+uploads/
+
+# InsForge & AI agent skills
+.insforge
+.agent
+.agents
+.augment
+.claude
+.cline
+.github/copilot*
+.kilocode
+.qoder
+.qwen
+.roo
+.trae
+.windsurf

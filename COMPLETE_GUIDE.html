@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Barcode System — Complete Simple Guide</title>
+<style>
+  :root{
+    --ink:#1A202C; --ink2:#3D4756; --muted:#718096;
+    --amber:#F59E0B; --amber-bg:#FEF3C7; --green:#10B981; --green-bg:#D1FAE5;
+    --orange:#EA580C; --orange-bg:#FFEDD5; --violet:#7C3AED; --violet-bg:#EDE9FE;
+    --blue:#2563EB; --blue-bg:#DBEAFE; --line:#E2E8F0; --soft:#F7FAFC;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--ink);margin:0;background:#EDF1F5;line-height:1.7;}
+  .page{max-width:840px;margin:0 auto;background:#fff;}
+  .pad{padding:38px 50px;}
+  h1{font-size:30px;margin:0;letter-spacing:-0.5px;}
+  h2{font-size:22px;margin:34px 0 6px;letter-spacing:-0.3px;display:flex;align-items:center;gap:10px;}
+  h2 .dot{width:30px;height:30px;border-radius:50%;background:var(--violet);color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  p{font-size:16px;color:var(--ink2);margin:10px 0;}
+  .big{font-size:18px;}
+  b{color:var(--ink);}
+  .hero{background:linear-gradient(135deg,#7C3AED,#2563EB);color:#fff;padding:42px 50px;}
+  .hero h1{color:#fff;} .hero p{color:#E9D5FF;font-size:17px;margin-top:8px;}
+  .toc{background:var(--soft);border-radius:14px;padding:14px 24px;margin:14px 0;}
+  .toc b{display:block;margin-bottom:4px;color:var(--ink);}
+  .toc span{font-size:15px;color:var(--ink2);}
+
+  .analogy{background:var(--blue-bg);border-radius:16px;padding:20px 24px;margin:16px 0;font-size:17px;color:#1E3A8A;}
+  .analogy .icon{font-size:28px;} .analogy b{color:#1E3A8A;}
+
+  .buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:18px 0;}
+  .bt{border-radius:16px;padding:18px;text-align:center;border:3px solid;}
+  .bt.v{border-color:var(--violet);background:var(--violet-bg);}
+  .bt.g{border-color:var(--green);background:var(--green-bg);}
+  .bt.o{border-color:var(--orange);background:var(--orange-bg);}
+  .bt .e{font-size:30px;} .bt .name{font-weight:800;font-size:17px;margin-top:4px;}
+  .bt.v .name{color:var(--violet);} .bt.g .name{color:#047857;} .bt.o .name{color:var(--orange);}
+  .bt .what{font-size:13px;color:var(--ink2);margin-top:5px;}
+
+  .step{display:flex;gap:16px;align-items:flex-start;margin:14px 0;}
+  .step .n{flex-shrink:0;width:40px;height:40px;border-radius:50%;background:var(--amber);color:#fff;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;}
+  .step .n.g{background:var(--green);} .step .n.o{background:var(--orange);} .step .n.v{background:var(--violet);}
+  .step .body .h{font-size:17px;font-weight:700;color:var(--ink);}
+  .step .body .d{font-size:15px;color:var(--ink2);margin-top:1px;}
+
+  .mono{background:#0F172A;color:#E2E8F0;border-radius:12px;padding:16px 20px;font-family:'SF Mono',Consolas,monospace;font-size:14px;line-height:1.8;margin:14px 0;white-space:pre-wrap;}
+  .mono .ok{color:#34D399;} .mono .am{color:#FBBF24;}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px;}
+  th{background:var(--soft);text-align:left;padding:9px 12px;border:1px solid var(--line);font-size:13px;color:var(--muted);}
+  td{padding:9px 12px;border:1px solid var(--line);color:var(--ink2);}
+  td b{color:var(--ink);}
+  .yes{color:#047857;font-weight:700;} .once{color:#B45309;font-weight:700;}
+
+  .note{border-left:5px solid var(--amber);background:var(--amber-bg);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0;font-size:16px;color:#7C2D12;}
+  .note.blue{border-color:var(--blue);background:var(--blue-bg);color:#1E3A8A;}
+  .note.green{border-color:var(--green);background:var(--green-bg);color:#065F46;}
+  ol,ul{padding-left:22px;} li{font-size:16px;color:var(--ink2);margin:6px 0;}
+  .key{font-size:18px;text-align:center;background:var(--violet-bg);color:var(--violet);font-weight:700;border-radius:14px;padding:16px 20px;margin:18px 0;}
+
+  .foot{padding:22px 50px;background:var(--soft);border-top:1px solid var(--line);font-size:13px;color:var(--muted);text-align:center;}
+  .noprint{text-align:center;padding:16px;}
+  .btn{background:var(--violet);color:#fff;border:none;border-radius:10px;padding:13px 30px;font-weight:700;font-size:15px;cursor:pointer;}
+  @media print{ body{background:#fff;} .noprint{display:none;}
+    .hero,.analogy,.bt,.note,.key,.step .n,.mono,th,.bt{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    h2{break-after:avoid;} .buttons,table,.analogy,.note,.mono,.key{break-inside:avoid;} }
+</style>
+</head>
+<body>
+<div class="noprint"><button class="btn" onclick="window.print()">🖨️  Save as PDF / Print</button></div>
+
+<div class="page">
+  <div class="hero">
+    <h1>📷 The Barcode System — Everything Explained</h1>
+    <p>One simple guide. No computer knowledge needed.</p>
+  </div>
+
+  <div class="pad">
+
+    <div class="toc">
+      <b>What's inside:</b>
+      <span>1. What a barcode really is &nbsp;·&nbsp; 2. You teach each product once &nbsp;·&nbsp; 3. The same product is known forever &nbsp;·&nbsp; 4. Where the details come from &nbsp;·&nbsp; 5. Expiry dates &amp; batches &nbsp;·&nbsp; 6. The 3 buttons &nbsp;·&nbsp; 7. What to do — every situation &nbsp;·&nbsp; 8. The honest truth &nbsp;·&nbsp; 9. Golden rules</span>
+    </div>
+
+    <!-- 1 -->
+    <h2><span class="dot">1</span> What a barcode really is</h2>
+    <p class="big">A barcode (the black lines on a product) is just a <b>number</b>. That's all. It does <b>not</b> hold the name, price, or expiry. It is only an ID — like a phone number.</p>
+    <div class="analogy"><span class="icon">📱</span> <b>Think of your phone contacts.</b> A phone number alone is just digits. You save it once with a name — "Ramesh" — and forever after, your phone shows "Ramesh" when he calls. Our system works the exact same way.</div>
+
+    <!-- 2 -->
+    <h2><span class="dot">2</span> You teach each product ONCE</h2>
+    <p>The first time the computer ever sees a product, it doesn't know it. You <b>teach it once</b> — link the barcode to the product name. Like saving a new contact. After that, it's remembered forever.</p>
+    <div class="note">You teach <b>one time per product</b> — never per bottle, never per delivery. Teach it on day one, and you never teach that product again.</div>
+
+    <!-- 3 -->
+    <h2><span class="dot">3</span> The same product is known forever</h2>
+    <p class="big">Every Diet Coke in the world has the <b>same barcode</b>. The 1st, the 2nd, the 1000th — identical. So once you teach the 1st one, every Diet Coke after that is recognised <b>instantly</b>.</p>
+    <div class="mono">1st Diet Coke → "don't know it" → you teach it once  <span class="ok">✅</span>
+2nd Diet Coke → same barcode! → "Ah, Diet Coke" → done <span class="ok">✅</span>
+3rd, 4th, 100th → just scan → done <span class="ok">✅</span></div>
+    <div class="note green"><b>You do NOT re-teach the same product.</b> Same barcode = recognised automatically, like Ramesh calling again — the phone already knows him.</div>
+
+    <!-- 4 -->
+    <h2><span class="dot">4</span> Where the details come from (name, price, unit)</h2>
+    <p>The details live <b>inside the product</b>, not in the barcode. When the barcode is linked, scanning shows them — because they were already saved. And good news: your <b>523 products are already loaded with their details</b> (name, category, unit, price) from your store's stock file.</p>
+    <table>
+      <tr><th>Detail</th><th>Where it comes from</th></tr>
+      <tr><td><b>Name</b> (Diet Coke)</td><td class="yes">Already saved ✅</td></tr>
+      <tr><td><b>Category</b> (Beverages)</td><td class="yes">Already saved ✅</td></tr>
+      <tr><td><b>Unit</b> (bottle / pcs)</td><td class="yes">Already saved ✅</td></tr>
+      <tr><td><b>Price</b></td><td class="yes">Already saved ✅</td></tr>
+      <tr><td><b>How many came today</b></td><td class="once">You type this 👈</td></tr>
+    </table>
+    <div class="note blue">The <b>only</b> thing you type is the <b>quantity</b> — because how many arrived is different every delivery. Everything else is already known.</div>
+
+    <!-- 5 -->
+    <h2><span class="dot">5</span> Expiry dates &amp; batches (the important one)</h2>
+    <p>The expiry date is <b>printed separately</b> on the pack — it is <b>not</b> inside the small bottle barcode. So the barcode stays the same, but each delivery can have a different expiry. The system handles this with <b>batches</b>:</p>
+    <div class="mono">Diet Coke — 1st delivery: 20 bottles, expiry Dec 2026 → Batch #1
+Diet Coke — 2nd delivery: 30 bottles, expiry Mar 2027 → Batch #2
+            <span class="am">▲ same barcode        ▲ different expiry, kept separate</span></div>
+    <p>Each delivery becomes its own batch with its own expiry. When you sell, the system gives out the <b>oldest one first</b> (Batch #1) — so nothing expires sitting on the shelf. That's called <b>FIFO</b> (First In, First Out).</p>
+    <div class="note">For loose bottles, you type the expiry <b>once per delivery</b> (same date for the whole lot). If goods come in a <b>wholesale carton with a long barcode</b>, that barcode holds the expiry inside — and it fills in <b>automatically</b>.</div>
+
+    <!-- 6 -->
+    <h2><span class="dot">6</span> The 3 buttons</h2>
+    <div class="buttons">
+      <div class="bt v"><div class="e">🔗</div><div class="name">SETUP</div><div class="what">Teach a product (once)</div></div>
+      <div class="bt g"><div class="e">⬇️</div><div class="name">INWARD</div><div class="what">Stock coming IN</div></div>
+      <div class="bt o"><div class="e">⬆️</div><div class="name">OUTWARD</div><div class="what">Stock going OUT</div></div>
+    </div>
+    <p class="big">Pick a button, then scan. <b style="color:var(--violet)">Purple = teach</b>, <b style="color:#047857">green = in</b>, <b style="color:var(--orange)">orange = out</b>.</p>
+
+    <!-- 7 -->
+    <h2><span class="dot">7</span> What to do — every situation</h2>
+
+    <h3 style="font-size:18px;color:var(--violet);">🆕 A brand-new product arrives (first time)</h3>
+    <div class="step"><div class="n g">1</div><div class="body"><div class="h">Press green INWARD. Type how many. Scan.</div></div></div>
+    <div class="step"><div class="n g">2</div><div class="body"><div class="h">It says "don't know it" → a list pops up.</div></div></div>
+    <div class="step"><div class="n g">3</div><div class="body"><div class="h">Tap the product's name once. (If it has an expiry, type it.)</div><div class="d">✅ Linked + stock added. You'll never pick from the list for this product again.</div></div></div>
+
+    <h3 style="font-size:18px;color:#047857;">🔁 The same product arrives again (next time)</h3>
+    <div class="step"><div class="n g">1</div><div class="body"><div class="h">Press green INWARD. Type how many. Scan.</div><div class="d">✅ Recognised instantly. No list. Done.</div></div></div>
+
+    <h3 style="font-size:18px;color:var(--orange);">📤 Goods leave the store</h3>
+    <div class="step"><div class="n o">1</div><div class="body"><div class="h">Press orange OUTWARD. Type how many. Scan.</div><div class="d">✅ Stock removed (oldest batch first). Done.</div></div></div>
+
+    <!-- 8 -->
+    <h2><span class="dot">8</span> The honest truth (what's automatic)</h2>
+    <table>
+      <tr><th>When you scan…</th><th>What it knows by itself</th></tr>
+      <tr><td>A product you've taught before</td><td class="yes">Everything — name, price, unit, stock ✅</td></tr>
+      <tr><td>A wholesale carton (long barcode)</td><td class="yes">Also batch + expiry + weight ✅</td></tr>
+      <tr><td>A big national brand (Amul, Coke…)</td><td class="yes">Found online &amp; matched automatically ✅</td></tr>
+      <tr><td>A brand-new product, first time</td><td class="once">You tap the name once → then automatic ✅</td></tr>
+    </table>
+    <p class="big">No system anywhere "reads details out of a barcode" — the barcode is only a number. Big stores like D-Mart teach each product once, then scan forever. <b>We do exactly the same.</b></p>
+
+    <!-- 9 -->
+    <h2><span class="dot">9</span> Golden rules</h2>
+    <div class="note">
+      <ol style="margin:4px 0;">
+        <li><b>Teach each product once</b> (purple SETUP) — only the first time it's ever seen.</li>
+        <li><b>Goods coming in?</b> → green INWARD.</li>
+        <li><b>Goods going out?</b> → orange OUTWARD.</li>
+        <li><b>Always type the quantity first</b>, then scan.</li>
+        <li><b>Click inside the scan box</b> so the scanner types there.</li>
+        <li>Same product = same barcode = <b>recognised forever</b>. You never re-teach it.</li>
+      </ol>
+    </div>
+
+    <div class="key">Teach each product ONCE → then just scan IN and scan OUT. 🎉<br>The computer remembers everything. You only ever type the quantity.</div>
+
+  </div>
+  <div class="foot">FG Inventory — Barcode System · Complete Simple Guide · K Girdharlal, Surat Store</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,3 @@
+vendor,invoice_no,invoice_date,item_code,barcode,item,category,sub_category,unit,qty,rate,expiry_date
+Sample Vendor,INV-001,2026-06-03,,,Dolce Vita Peeled Tomatoes 3kg,Food Item,Canned,TIN,10,567,
+Sample Vendor,INV-001,2026-06-03,,,Tissue Paper,Packing,Packing Materials,Qty,50,12,

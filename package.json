@@ -1,0 +1,28 @@
+{
+  "name": "book-ends",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Book Ends Store — inventory. Deploys as one app (Railway/Koyeb/Render) or as Vercel static + serverless function.",
+  "scripts": {
+    "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm --prefix backend install --omit=dev",
+    "start": "node backend/src/server.js"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "bwip-js": "^3.4.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "pg": "^8.11.5",
+    "xlsx": "^0.18.5"
+  }
+}

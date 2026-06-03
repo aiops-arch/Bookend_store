@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barcode System — Simple Guide for Everyone</title>
+<style>
+  :root{
+    --ink:#1A202C; --ink2:#3D4756; --muted:#718096;
+    --amber:#F59E0B; --amber-bg:#FEF3C7; --green:#10B981; --green-bg:#D1FAE5;
+    --orange:#EA580C; --orange-bg:#FFEDD5; --violet:#7C3AED; --violet-bg:#EDE9FE;
+    --blue:#2563EB; --blue-bg:#DBEAFE; --line:#E2E8F0; --soft:#F7FAFC;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--ink);margin:0;background:#EDF1F5;line-height:1.7;}
+  .page{max-width:840px;margin:0 auto;background:#fff;}
+  .pad{padding:40px 50px;}
+  h1{font-size:32px;margin:0;letter-spacing:-0.5px;}
+  h2{font-size:23px;margin:40px 0 6px;letter-spacing:-0.3px;}
+  p{font-size:16px;color:var(--ink2);margin:10px 0;}
+  .big{font-size:18px;}
+  b{color:var(--ink);}
+  .hero{background:linear-gradient(135deg,#7C3AED,#2563EB);color:#fff;padding:44px 50px;}
+  .hero h1{color:#fff;} .hero p{color:#E9D5FF;font-size:17px;margin-top:8px;}
+
+  .analogy{background:var(--blue-bg);border-radius:16px;padding:22px 26px;margin:18px 0;font-size:17px;color:#1E3A8A;}
+  .analogy .icon{font-size:30px;}
+  .analogy b{color:#1E3A8A;}
+
+  .step{display:flex;gap:18px;align-items:flex-start;margin:18px 0;}
+  .step .n{flex-shrink:0;width:44px;height:44px;border-radius:50%;background:var(--amber);color:#fff;font-weight:800;font-size:21px;display:flex;align-items:center;justify-content:center;}
+  .step .n.g{background:var(--green);} .step .n.o{background:var(--orange);} .step .n.v{background:var(--violet);}
+  .step .body{padding-top:3px;}
+  .step .body .h{font-size:18px;font-weight:700;color:var(--ink);}
+  .step .body .d{font-size:16px;color:var(--ink2);margin-top:2px;}
+
+  .buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:20px 0;}
+  .bt{border-radius:16px;padding:20px;text-align:center;border:3px solid;}
+  .bt.v{border-color:var(--violet);background:var(--violet-bg);}
+  .bt.g{border-color:var(--green);background:var(--green-bg);}
+  .bt.o{border-color:var(--orange);background:var(--orange-bg);}
+  .bt .e{font-size:34px;}
+  .bt .name{font-weight:800;font-size:18px;margin-top:6px;}
+  .bt.v .name{color:var(--violet);} .bt.g .name{color:#047857;} .bt.o .name{color:var(--orange);}
+  .bt .what{font-size:14px;color:var(--ink2);margin-top:6px;}
+
+  .box{border:2px solid var(--line);border-radius:16px;padding:6px 26px 18px;margin:18px 0;}
+  .box.green{border-color:var(--green);background:#F0FDF8;}
+  .box.orange{border-color:var(--orange);background:#FFF7ED;}
+  .box.violet{border-color:var(--violet);background:#FAF5FF;}
+  .box h3{font-size:19px;margin:16px 0 4px;}
+
+  .screen{background:#fff;border:2px dashed var(--muted);border-radius:14px;padding:18px;margin:16px 0;text-align:center;}
+  .screen .label{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .screen .scanbox{border:3px solid var(--violet);border-radius:10px;padding:14px;margin-top:8px;color:var(--muted);font-size:16px;}
+  .screen .res{margin-top:12px;font-size:18px;font-weight:700;color:#047857;}
+
+  .rules{background:var(--amber-bg);border-radius:16px;padding:18px 26px;margin:18px 0;}
+  .rules li{font-size:16px;color:#7C2D12;margin:8px 0;}
+  ol,ul{padding-left:22px;}
+  li{font-size:16px;color:var(--ink2);margin:7px 0;}
+
+  .day{background:var(--soft);border-radius:16px;padding:8px 26px 18px;margin:18px 0;}
+
+  .foot{padding:24px 50px;background:var(--soft);border-top:1px solid var(--line);font-size:13px;color:var(--muted);text-align:center;}
+  .noprint{text-align:center;padding:16px;}
+  .btn{background:var(--violet);color:#fff;border:none;border-radius:10px;padding:13px 30px;font-weight:700;font-size:15px;cursor:pointer;}
+  @media print{ body{background:#fff;} .noprint{display:none;}
+    .hero,.analogy,.bt,.box,.rules,.day,.step .n,.screen{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    h2{break-after:avoid;} .buttons,.box,.analogy,.rules,.day{break-inside:avoid;} }
+</style>
+</head>
+<body>
+<div class="noprint"><button class="btn" onclick="window.print()">🖨️  Save as PDF / Print</button></div>
+
+<div class="page">
+  <div class="hero">
+    <h1>📷 The Barcode System</h1>
+    <p>A super-simple guide. If you can use a phone, you can use this.</p>
+  </div>
+
+  <div class="pad">
+
+    <!-- WHAT IS IT -->
+    <h2>First, what is a barcode?</h2>
+    <p class="big">A barcode is just those <b>black lines</b> printed on every product. When you scan it, the computer reads a <b>number</b> — that's all it is. A number. Nothing else. It does <b>not</b> contain the product's name or price.</p>
+
+    <div class="analogy">
+      <span class="icon">📱</span> <b>Think of it exactly like your phone contacts.</b><br>
+      A phone number by itself is just digits. But you <b>save it once</b> with a name — "Ramesh" — and after that, every time Ramesh calls, your phone shows <b>"Ramesh"</b>, not the number.<br><br>
+      Our system is the same: we <b>teach it once</b> — "this barcode = this product" — and after that, every scan shows the product automatically.
+    </div>
+
+    <!-- THE 3 BUTTONS -->
+    <h2>There are only 3 buttons</h2>
+    <p>Open the app, go to the <b>Scan</b> page. You will see three big buttons at the top:</p>
+    <div class="buttons">
+      <div class="bt v"><div class="e">🔗</div><div class="name">SETUP</div><div class="what">Teach the computer (do this once)</div></div>
+      <div class="bt g"><div class="e">⬇️</div><div class="name">INWARD</div><div class="what">Stock coming IN</div></div>
+      <div class="bt o"><div class="e">⬆️</div><div class="name">OUTWARD</div><div class="what">Stock going OUT</div></div>
+    </div>
+    <p class="big">That's it. Pick a button, then scan. The colour tells you what you're doing: <b style="color:var(--violet)">purple = teach</b>, <b style="color:#047857">green = in</b>, <b style="color:var(--orange)">orange = out</b>.</p>
+
+    <!-- SETUP -->
+    <div class="box violet">
+      <h3>🔗 Button 1 — SETUP (teach the computer)</h3>
+      <p><b>You do this ONCE for each product.</b> Like saving a contact in your phone.</p>
+      <div class="step"><div class="n v">1</div><div class="body"><div class="h">Click the purple SETUP button.</div></div></div>
+      <div class="step"><div class="n v">2</div><div class="body"><div class="h">Scan a product's barcode.</div><div class="d">The computer says: "I don't know this one yet."</div></div></div>
+      <div class="step"><div class="n v">3</div><div class="body"><div class="h">A list of your products appears. Tap the right one.</div><div class="d">Type a few letters of the name to find it fast. Tap it.</div></div></div>
+      <div class="step"><div class="n v">4</div><div class="body"><div class="h">Done! That barcode is now saved forever. ✅</div><div class="d">Scan the next product. Keep going down your shelves.</div></div></div>
+      <p><b>You never have to do this again for that product.</b></p>
+    </div>
+
+    <!-- INWARD -->
+    <div class="box green">
+      <h3>⬇️ Button 2 — INWARD (stock coming in)</h3>
+      <p>Use this when <b>new goods arrive</b> in the shop.</p>
+      <div class="step"><div class="n g">1</div><div class="body"><div class="h">Click the green INWARD button.</div></div></div>
+      <div class="step"><div class="n g">2</div><div class="body"><div class="h">Type how many (the Quantity box). Example: 10.</div></div></div>
+      <div class="step"><div class="n g">3</div><div class="body"><div class="h">Scan the product.</div><div class="d">Stock goes UP by 10. The screen shows it. Done.</div></div></div>
+      <div class="screen">
+        <div class="label">What you see on screen</div>
+        <div class="scanbox">📷 scan here…</div>
+        <div class="res">✅ +10 &nbsp; "now 35 in stock"</div>
+      </div>
+    </div>
+
+    <!-- OUTWARD -->
+    <div class="box orange">
+      <h3>⬆️ Button 3 — OUTWARD (stock going out)</h3>
+      <p>Use this when goods <b>leave</b> the shop (sold, used, dispatched).</p>
+      <div class="step"><div class="n o">1</div><div class="body"><div class="h">Click the orange OUTWARD button.</div></div></div>
+      <div class="step"><div class="n o">2</div><div class="body"><div class="h">Type how many. Example: 4.</div></div></div>
+      <div class="step"><div class="n o">3</div><div class="body"><div class="h">Scan the product.</div><div class="d">Stock goes DOWN by 4. The computer automatically takes the oldest stock first, so nothing gets too old.</div></div></div>
+      <div class="screen">
+        <div class="label">What you see on screen</div>
+        <div class="scanbox">📷 scan here…</div>
+        <div class="res" style="color:#B45309;">⬆️ −4 &nbsp; "now 31 in stock"</div>
+      </div>
+    </div>
+
+    <!-- A NORMAL DAY -->
+    <h2>A normal day in the shop</h2>
+    <div class="day">
+      <div class="step"><div class="n g">🌅</div><div class="body"><div class="h">Morning: a delivery arrives.</div><div class="d">Press <b>INWARD</b>, type the count, scan each item. Stock goes up.</div></div></div>
+      <div class="step"><div class="n o">🛒</div><div class="body"><div class="h">During the day: goods go out.</div><div class="d">Press <b>OUTWARD</b>, type the count, scan. Stock goes down.</div></div></div>
+      <div class="step"><div class="n">📊</div><div class="body"><div class="h">Anytime: the boss checks reports.</div><div class="d">Stock levels, low-stock warnings, expiry alerts — all update by themselves.</div></div></div>
+    </div>
+
+    <!-- IF UNKNOWN -->
+    <h2>What if it says "I don't know this barcode"?</h2>
+    <p class="big">No problem — it just means that product was never taught yet. A small box appears: <b>pick the right product from the list, tap it</b>, and it's saved. Next time, it will be recognised instantly. It's the same as saving a new contact in your phone.</p>
+
+    <!-- GOLDEN RULES -->
+    <h2>The only rules to remember</h2>
+    <div class="rules">
+      <ol>
+        <li><b>First, teach each product once</b> using the purple SETUP button.</li>
+        <li><b>Goods coming in?</b> → Green INWARD button.</li>
+        <li><b>Goods going out?</b> → Orange OUTWARD button.</li>
+        <li><b>Always type the quantity first</b>, then scan.</li>
+        <li><b>Click inside the scan box</b> so the scanner knows where to type.</li>
+      </ol>
+    </div>
+
+    <p class="big" style="text-align:center;margin-top:30px;"><b>That's the whole system. Teach once → then just scan in and scan out. 🎉</b></p>
+
+  </div>
+  <div class="foot">FG Inventory — Barcode System · Simple Staff Guide · K Girdharlal, Surat Store</div>
+</div>
+</body>
+</html>

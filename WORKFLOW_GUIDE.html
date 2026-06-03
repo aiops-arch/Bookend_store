@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FG Inventory — Barcode Scan System | Workflow Guide</title>
+<style>
+  :root{
+    --ink:#0F172A; --ink2:#334155; --muted:#64748B; --line:#E2E8F0;
+    --amber:#F59E0B; --amber-bg:#FEF3C7; --green:#10B981; --green-bg:#D1FAE5;
+    --blue:#2563EB; --blue-bg:#DBEAFE; --violet:#7C3AED; --violet-bg:#EDE9FE; --red:#EF4444;
+    --paper:#FFFFFF; --soft:#F8FAFC;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);margin:0;background:#EEF2F6;line-height:1.55;}
+  .page{max-width:880px;margin:0 auto;background:var(--paper);}
+  .pad{padding:46px 54px;}
+  h1{font-size:30px;margin:0 0 4px;letter-spacing:-0.5px;}
+  h2{font-size:20px;margin:38px 0 12px;padding-bottom:7px;border-bottom:2px solid var(--line);letter-spacing:-0.3px;}
+  h3{font-size:15px;margin:20px 0 8px;color:var(--ink);}
+  p{margin:9px 0;color:var(--ink2);font-size:14px;}
+  .lead{font-size:15px;color:var(--ink2);}
+  ul,ol{margin:8px 0;padding-left:22px;color:var(--ink2);font-size:14px;}
+  li{margin:5px 0;}
+  small{color:var(--muted);}
+  code{background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:'SF Mono',Consolas,monospace;font-size:12.5px;color:var(--ink);}
+
+  /* header */
+  .hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 100%);color:#fff;padding:40px 54px;}
+  .hero .badge{display:inline-flex;align-items:center;gap:8px;background:var(--amber);color:#0F172A;font-weight:800;border-radius:8px;padding:7px 12px;font-size:13px;letter-spacing:0.3px;}
+  .hero h1{color:#fff;margin-top:18px;}
+  .hero .sub{color:#CBD5E1;font-size:15px;margin-top:4px;}
+  .hero .meta{margin-top:18px;display:flex;gap:26px;flex-wrap:wrap;color:#94A3B8;font-size:12.5px;}
+  .hero .meta b{color:#E2E8F0;font-weight:600;}
+
+  /* status pills */
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;}
+  .pill{font-size:12px;font-weight:600;padding:5px 11px;border-radius:20px;background:var(--green-bg);color:#047857;}
+  .pill.b{background:var(--blue-bg);color:#1D4ED8;}
+  .pill.v{background:var(--violet-bg);color:#6D28D9;}
+
+  /* cards */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0;}
+  .card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--paper);}
+  .card .k{font-size:26px;font-weight:800;color:var(--ink);line-height:1;}
+  .card .l{font-size:12.5px;color:var(--muted);margin-top:5px;}
+
+  /* steps / flow */
+  .flow{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:14px 0;}
+  .frow{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line);}
+  .frow:last-child{border-bottom:none;}
+  .num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--amber);color:#0F172A;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;}
+  .num.g{background:var(--green);color:#fff;} .num.b{background:var(--blue);color:#fff;}
+  .frow .t{font-weight:700;font-size:14px;color:var(--ink);}
+  .frow .d{font-size:13px;color:var(--ink2);margin-top:2px;}
+
+  /* mode boxes */
+  .modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0;}
+  .mode{border-radius:12px;padding:16px;text-align:center;border:2px solid;}
+  .mode.s{border-color:var(--violet);background:var(--violet-bg);}
+  .mode.i{border-color:var(--green);background:var(--green-bg);}
+  .mode.o{border-color:var(--amber);background:var(--amber-bg);}
+  .mode .mh{font-weight:800;font-size:15px;}
+  .mode.s .mh{color:var(--violet);} .mode.i .mh{color:#047857;} .mode.o .mh{color:#B45309;}
+  .mode .md{font-size:12px;color:var(--ink2);margin-top:6px;}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;}
+  th{background:var(--soft);text-align:left;padding:9px 12px;border:1px solid var(--line);font-size:12px;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted);}
+  td{padding:9px 12px;border:1px solid var(--line);color:var(--ink2);vertical-align:top;}
+  td b{color:var(--ink);}
+  .yes{color:#047857;font-weight:700;} .partial{color:#B45309;font-weight:700;}
+
+  .callout{border-left:4px solid var(--amber);background:var(--amber-bg);border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;font-size:13.5px;color:#7C2D12;}
+  .callout.note{border-color:var(--blue);background:var(--blue-bg);color:#1E3A8A;}
+  .callout b{color:inherit;}
+
+  .access{background:var(--ink);color:#fff;border-radius:12px;padding:20px 24px;margin:16px 0;}
+  .access .url{font-size:22px;font-weight:800;color:var(--amber);font-family:'SF Mono',Consolas,monospace;}
+  .access table{margin:12px 0 0;} .access th{background:#1E293B;color:#94A3B8;border-color:#334155;}
+  .access td{color:#CBD5E1;border-color:#334155;} .access td b{color:#fff;}
+
+  .foot{padding:22px 54px;background:var(--soft);border-top:1px solid var(--line);font-size:12px;color:var(--muted);}
+  .noprint{text-align:center;padding:16px;}
+  .btn{background:var(--amber);color:#0F172A;border:none;border-radius:8px;padding:11px 26px;font-weight:700;font-size:14px;cursor:pointer;}
+  @media print{
+    body{background:#fff;} .noprint{display:none;} .page{max-width:none;}
+    .hero{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .pill,.mode,.num,.callout,.access,th{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    h2{break-after:avoid;} .flow,.modes,table,.access{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<div class="noprint">
+  <button class="btn" onclick="window.print()">🖨️  Print / Save as PDF</button>
+</div>
+
+<div class="page">
+
+  <div class="hero">
+    <span class="badge">⊙ FG INVENTORY</span>
+    <h1>Barcode Scan Inventory System</h1>
+    <div class="sub">Receive, dispatch &amp; track every product by scanning — D-Mart / Walmart style.</div>
+    <div class="meta">
+      <span><b>Business:</b> K Girdharlal — Restaurant &amp; Catering Supplies</span>
+      <span><b>Location:</b> Surat Store</span>
+      <span><b>Status:</b> Live on store network</span>
+    </div>
+  </div>
+
+  <div class="pad">
+
+    <!-- EXEC SUMMARY -->
+    <h2>1 · What this system does</h2>
+    <p class="lead">A web-based inventory system where staff manage stock by <b>scanning barcodes</b> — no manual data entry for day-to-day work. Every scan instantly updates stock, records who did it and when, and feeds live reports. It works exactly like the checkout and receiving systems at large retail chains.</p>
+    <div class="pills">
+      <span class="pill">✓ 523 products loaded &amp; live</span>
+      <span class="pill">✓ Scan-in / Scan-out working</span>
+      <span class="pill">✓ FIFO batch &amp; expiry tracking</span>
+      <span class="pill b">✓ Role-based logins</span>
+      <span class="pill b">✓ Full audit trail</span>
+      <span class="pill v">✓ Live on store WiFi</span>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="k">523</div><div class="l">Products in the live catalogue</div></div>
+      <div class="card"><div class="k">27</div><div class="l">Product categories</div></div>
+      <div class="card"><div class="k">3</div><div class="l">Scan modes — Setup · Inward · Outward</div></div>
+      <div class="card"><div class="k">5</div><div class="l">Staff role logins (Admin → View-only)</div></div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <h2>2 · How it works (the simple idea)</h2>
+    <p>Every product gets its barcode <b>linked once</b> to a catalogue item — the same one-time setup every retail chain does. After that, the barcode acts as an instant <b>lookup key</b>: scan it, and the system already knows the product, its category, stock, and batches. <b>Scanning reads the number and looks it up — that is the entire engine behind D-Mart and Walmart too.</b></p>
+    <div class="callout note">
+      <b>Honest note for review:</b> No system "reads product details out of a barcode" — a barcode is only an ID number. Large stores build a complete catalogue once, then scan against it forever. We have done the same: the catalogue is loaded; the only remaining step is linking each product's barcode to it (one time).
+    </div>
+
+    <!-- WORKFLOW -->
+    <h2>3 · The workflow</h2>
+
+    <h3>One-time setup — link the barcodes</h3>
+    <div class="flow">
+      <div class="frow"><div class="num">1</div><div><div class="t">Open the Scan screen → SETUP mode</div><div class="d">A dedicated mode just for linking — no stock changes.</div></div></div>
+      <div class="frow"><div class="num">2</div><div><div class="t">Scan a product → pick the matching item (1 click)</div><div class="d">The system shows the catalogue; you confirm which product the barcode belongs to.</div></div></div>
+      <div class="frow"><div class="num">3</div><div><div class="t">Barcode bonded — forever</div><div class="d">Walk the shelves once. Each product is now permanently recognised.</div></div></div>
+    </div>
+    <p><small>Faster option: scan all barcodes into one spreadsheet and the system auto-links every product it can identify, leaving only the rest to confirm.</small></p>
+
+    <h3>Daily operations — just scan</h3>
+    <div class="modes">
+      <div class="mode s"><div class="mh">🔗 SETUP</div><div class="md">Link barcodes (one-time, per product)</div></div>
+      <div class="mode i"><div class="mh">↙ INWARD</div><div class="md">Scan to ADD stock when goods arrive</div></div>
+      <div class="mode o"><div class="mh">↗ OUTWARD</div><div class="md">Scan to REMOVE stock (oldest batch first)</div></div>
+    </div>
+    <div class="flow">
+      <div class="frow"><div class="num g">↙</div><div><div class="t">Goods arrive → INWARD mode → scan</div><div class="d">Stock goes up. A batch is created with date (and expiry if printed on a carton). Logged under the staff member.</div></div></div>
+      <div class="frow"><div class="num b">↗</div><div><div class="t">Goods leave → OUTWARD mode → scan</div><div class="d">Stock goes down using FIFO (oldest stock first), so nothing expires sitting on the shelf.</div></div></div>
+      <div class="frow"><div class="num">📊</div><div><div class="t">Reports update live</div><div class="d">Current stock, low-stock alerts, expiry alerts, margins and a full audit trail — all automatic.</div></div></div>
+    </div>
+
+    <!-- WHAT YOU NEED TO DO -->
+    <h2>4 · What we need to do</h2>
+    <div class="flow">
+      <div class="frow"><div class="num">1</div><div><div class="t">Run the one-time barcode setup</div><div class="d">Scan each product once (in the app, or via the bulk spreadsheet) to link its barcode. This is the only manual effort — done once.</div></div></div>
+      <div class="frow"><div class="num">2</div><div><div class="t">Train staff on the 3 buttons</div><div class="d">Setup, Inward, Outward. Takes minutes — it is just "pick a mode and scan."</div></div></div>
+      <div class="frow"><div class="num">3</div><div><div class="t">Go live</div><div class="d">Receive with INWARD, dispatch with OUTWARD. Managers watch reports. That's the daily routine.</div></div></div>
+    </div>
+
+    <!-- INTELLIGENCE -->
+    <h2>5 · Barcode intelligence — what fills in automatically</h2>
+    <table>
+      <tr><th>When you scan…</th><th>What happens</th><th>Auto?</th></tr>
+      <tr><td><b>An already-linked product</b></td><td>Name, category, stock, batches appear instantly; stock moves.</td><td class="yes">YES</td></tr>
+      <tr><td><b>A wholesale GS1 carton</b></td><td>Batch number, expiry date &amp; weight are read straight from the barcode.</td><td class="yes">YES</td></tr>
+      <tr><td><b>A national brand</b> (e.g. Amul)</td><td>Looked up online &amp; matched to the catalogue automatically.</td><td class="yes">YES</td></tr>
+      <tr><td><b>A new / local product</b></td><td>Linked once by staff (10 seconds) — then automatic forever.</td><td class="partial">Once</td></tr>
+    </table>
+    <p><small>The system reads <b>every standard barcode type</b> — EAN-13, UPC, EAN-8, GS1-128, and weight/price scale labels — and validates each scan.</small></p>
+
+    <!-- ROLES -->
+    <h2>6 · Staff roles &amp; access</h2>
+    <table>
+      <tr><th>Role</th><th>Can do</th></tr>
+      <tr><td><b>Admin</b></td><td>Everything + manage users &amp; setup</td></tr>
+      <tr><td><b>Purchase</b></td><td>Purchase orders, vendors, inward</td></tr>
+      <tr><td><b>Warehouse</b></td><td>Receive goods, scan inward, view stock</td></tr>
+      <tr><td><b>Sales</b></td><td>Dispatch, outward scan, delivery challan</td></tr>
+      <tr><td><b>View-only</b></td><td>Read reports only</td></tr>
+    </table>
+
+    <!-- ACCESS -->
+    <h2>7 · Access</h2>
+    <div class="access">
+      <div style="font-size:12px;color:#94A3B8;letter-spacing:0.5px;">OPEN ON ANY DEVICE ON THE STORE WIFI</div>
+      <div class="url">http://172.16.36.160:5173</div>
+      <table>
+        <tr><th>Login</th><th>Email</th><th>Password</th></tr>
+        <tr><td><b>Admin</b></td><td>admin@fg.local</td><td>Admin@123</td></tr>
+        <tr><td>Warehouse</td><td>warehouse@fg.local</td><td>Warehouse@123</td></tr>
+        <tr><td>Sales</td><td>sales@fg.local</td><td>Sales@123</td></tr>
+      </table>
+      <p style="color:#94A3B8;font-size:11.5px;margin-top:10px;">Demo passwords — to be changed before full rollout.</p>
+    </div>
+
+    <!-- ROADMAP -->
+    <h2>8 · What's done &amp; what's next</h2>
+    <table>
+      <tr><th>Capability</th><th>Status</th></tr>
+      <tr><td>Product catalogue (523 items, 27 categories)</td><td class="yes">Live</td></tr>
+      <tr><td>Scan to receive (Inward) &amp; dispatch (Outward, FIFO)</td><td class="yes">Live</td></tr>
+      <tr><td>Universal barcode reader (EAN/UPC/GS1/scale)</td><td class="yes">Live</td></tr>
+      <tr><td>Batch, expiry, low-stock &amp; audit tracking</td><td class="yes">Live</td></tr>
+      <tr><td>Role logins, reports, delivery challan</td><td class="yes">Live</td></tr>
+      <tr><td>One-time barcode setup of the full store</td><td class="partial">To do (1 session)</td></tr>
+      <tr><td>Staff training &amp; go-live</td><td class="partial">Next</td></tr>
+      <tr><td>Always-on server &amp; daily backup</td><td class="partial">Planned</td></tr>
+    </table>
+
+  </div>
+
+  <div class="foot">
+    FG Inventory — Barcode Scan System &nbsp;·&nbsp; K Girdharlal, Surat Store &nbsp;·&nbsp; Internal document, prepared for management review.
+  </div>
+</div>
+
+</body>
+</html>

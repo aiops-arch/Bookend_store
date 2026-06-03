@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book Ends Store — Inventory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --sidebar-w: 248px;
+        /* Warm editorial palette — deep green + warm gold on ivory.
+           A premium grocer feel, intentionally NOT the default slate+indigo. */
+        --bg: #F5F2EC;
+        --surface: #FFFFFF;
+        --surface-2: #FAF7F0;
+        --border: #E8E2D6;
+        --border-strong: #D8D1C2;
+        --text-1: #211E1A;
+        --text-2: #4A453D;
+        --text-3: #6F695E;
+        --text-4: #9A9387;
+        --accent: #B8893A;
+        --accent-dim: rgba(184,137,58,0.14);
+        --primary: #1F6F54;
+        --primary-hover: #185A44;
+        --primary-dim: rgba(31,111,84,0.10);
+        --success: #2E7D5B;
+        --success-dim: rgba(46,125,91,0.12);
+        --warning: #C8902A;
+        --warning-dim: rgba(200,144,42,0.12);
+        --danger: #C0492F;
+        --danger-dim: rgba(192,73,47,0.10);
+        --info: #2E6F8E;
+        /* dark sidebar tones (used by Sidebar.jsx too) */
+        --sidebar: #19211C;
+        --sidebar-2: #212B25;
+        --radius-sm: 6px;
+        --radius: 10px;
+        --radius-lg: 14px;
+        --shadow-xs: 0 1px 2px rgba(33,30,26,0.04);
+        --shadow-sm: 0 1px 3px rgba(33,30,26,0.05), 0 1px 2px rgba(33,30,26,0.03);
+        --shadow: 0 6px 20px -6px rgba(33,30,26,0.10), 0 2px 6px rgba(33,30,26,0.05);
+        --shadow-lg: 0 18px 50px -12px rgba(33,30,26,0.18);
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 14px;
+        line-height: 1.55;
+        letter-spacing: -0.006em;
+        background: var(--bg);
+        color: var(--text-1);
+        font-feature-settings: 'cv11', 'ss01';
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      /* Editorial serif for page titles — gives the app a human, branded voice */
+      h1, h2 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text-1);
+      }
+      h1 { font-size: 1.9rem; line-height: 1.15; }
+      /* Tabular figures for any numeric data cells */
+      td, th, .num, [data-num] { font-variant-numeric: tabular-nums; }
+      ::selection { background: rgba(31,111,84,0.18); }
+      :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--text-4); }
+      a { color: inherit; text-decoration: none; transition: color .15s ease; }
+      input, select, textarea { font-family: inherit; transition: border-color .15s ease, box-shadow .15s ease; }
+
+      /* ---- Motion & micro-interactions ---- */
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+      @keyframes popIn { 0% { opacity: 0; transform: scale(.96); } 100% { opacity: 1; transform: scale(1); } }
+      @keyframes shimmer { 100% { background-position: -200% 0; } }
+
+      #root { animation: fadeIn .35s ease both; }
+
+      button {
+        font-family: inherit;
+        transition: transform .12s ease, box-shadow .18s ease, background-color .18s ease,
+                    filter .18s ease, opacity .18s ease, border-color .15s ease;
+      }
+      button:not(:disabled) { cursor: pointer; }
+      button:not(:disabled):hover { filter: brightness(1.04); }
+      button:not(:disabled):active { transform: translateY(1px) scale(0.99); }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, #root { animation: none !important; transition: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
