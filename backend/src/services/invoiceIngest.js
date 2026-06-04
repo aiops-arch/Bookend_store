@@ -159,6 +159,16 @@ async function ingestInvoice(obj, opts = {}) {
     throw new Error('invoice has no lines');
   }
   const invoiceNo = (obj.invoice_no || '').toString().trim() || null;
+  // invoice_no is required — it's the key that prevents the same invoice being
+  // entered twice if the automation retries.
+  if (!invoiceNo) throw new Error('invoice_no is required (prevents double-entry on retry)');
+  // Store guard: only mirror the configured store (default Surat 117185). This
+  // stops another store's invoices (e.g. Ahmedabad 358609) polluting this catalogue.
+  const expectedStore = process.env.EXPECTED_STORE_PP_ID || '117185';
+  const gotStore = obj.store && (obj.store.pp_id || obj.store.id);
+  if (gotStore && String(gotStore).trim() !== String(expectedStore).trim()) {
+    throw new Error(`store ${gotStore} is not accepted — this system mirrors store ${expectedStore} only`);
+  }
   const summary = { invoice_no: invoiceNo, vendor: obj.vendor && obj.vendor.name, lines_total: obj.lines.length, items_matched: 0, items_created: 0, batches_created: 0, status: null, dry_run: dryRun };
   const counters = { matched: 0, created: 0 };
 
