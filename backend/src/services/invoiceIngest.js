@@ -193,10 +193,13 @@ async function ingestInvoice(obj, opts = {}) {
     const receiptDate = toISO(obj.invoice_date) || new Date().toISOString().split('T')[0];
     const catalog = await trx('items').select('id', 'item_code', 'variant_grade');
 
-    // Create the inward entry (draft)
+    // Create the inward entry (draft). raw_invoice keeps a VERBATIM copy of the
+    // whole invoice exactly as sent — so nothing Pet Pooja had is ever lost,
+    // even fields we don't have dedicated columns for.
     const [entry] = await trx('inward_entries').insert({
       vendor_id: vendor.id, invoice_no: invoiceNo, invoice_date: toISO(obj.invoice_date),
       status: 'draft', created_by: admin.id,
+      raw_invoice: JSON.stringify(obj),
     }).returning('*');
     await logAudit({ table_name: 'inward_entries', record_id: entry.id, action: 'INSERT', user_id: admin.id, new_value: { ...entry, via: 'invoice_intake' } }, trx);
 
@@ -208,9 +211,17 @@ async function ingestInvoice(obj, opts = {}) {
       const { item, how, score } = await resolveLineItem(trx, line, catalog, admin.id, counters);
       const rate = line.rate != null && !isNaN(parseFloat(line.rate)) ? parseFloat(line.rate) : 0;
       const expiry = toISO(line.expiry_date);
+      const num = (...vals) => { for (const v of vals) { if (v != null && !isNaN(parseFloat(v))) return parseFloat(v); } return null; };
 
       const [il] = await trx('inward_lines').insert({
         inward_id: entry.id, item_id: item.id, qty, rate, expiry_date: expiry,
+        // exact invoice figures (tax/discount/total) + the raw item name + HSN
+        tax_rate: num(line.tax_rate, line.gst, line.gst_rate),
+        tax_amount: num(line.tax_amount, line.tax),
+        discount: num(line.discount),
+        line_total: num(line.line_total, line.total, line.amount),
+        source_name: (line.name || '').toString().slice(0, 200) || null,
+        hsn_code: (line.hsn || line.hsn_code || '').toString().slice(0, 20) || null,
       }).returning('*');
 
       const [batch] = await trx('batches').insert({
