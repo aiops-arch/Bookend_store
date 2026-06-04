@@ -94,6 +94,7 @@ app.use('/api/custom-fields', require('./routes/custom-fields'));
 app.use('/api/system', require('./routes/system'));
 app.use('/api/intelligence', require('./routes/intelligence'));
 app.use('/api/barcode', require('./routes/barcode'));
+app.use('/api/invoices', require('./routes/invoices'));
 
 // Serve the built frontend so ONE service hosts the whole app (great for free
 // single-service hosting). Skipped in local dev where Vite serves the frontend.
