@@ -158,16 +158,21 @@ router.get('/dead-stock', authenticate, async (req, res, next) => {
         i.id AS item_id,
         COALESCE(i.variant_grade, sc.name) AS item_name,
         sc.name AS sub_category_name,
+        c.name AS category_name,
+        i.avg_daily_consumption,
         COALESCE(SUM(b.qty_remaining), 0) AS stock_kg,
+        MIN(b.expiry_date) AS nearest_expiry,
+        (MIN(b.expiry_date) - CURRENT_DATE) AS days_to_nearest_expiry,
         ed.last_dispatch_ever AS last_dispatch
       FROM items i
       JOIN sub_categories sc ON sc.id = i.sub_category_id
+      JOIN categories c ON c.id = sc.category_id
       JOIN batches b ON b.item_id = i.id AND b.qty_remaining > 0
       LEFT JOIN recent_dispatch rd ON rd.item_id = i.id
       LEFT JOIN ever_dispatched ed ON ed.item_id = i.id
       WHERE rd.item_id IS NULL
-      GROUP BY i.id, i.item_code, i.variant_grade, sc.name, ed.last_dispatch_ever
-      ORDER BY stock_kg DESC
+      GROUP BY i.id, i.item_code, i.variant_grade, sc.name, c.name, i.avg_daily_consumption, ed.last_dispatch_ever
+      ORDER BY nearest_expiry ASC NULLS LAST, stock_kg DESC
     `, [safeDays]);
     res.json({ success: true, data: rows.rows });
   } catch (err) {
@@ -197,7 +202,11 @@ router.get('/expired-batches', authenticate, async (req, res, next) => {
       .orderBy('batches.expired_at', 'desc');
 
     if (monthParam) {
-      const [year, month] = monthParam.split('-').map(Number);
+      const match = /^(\d{4})-(\d{2})$/.exec(monthParam);
+      if (!match) return res.status(400).json({ success: false, error: 'Invalid month format — use YYYY-MM' });
+      const year = parseInt(match[1]);
+      const month = parseInt(match[2]);
+      if (month < 1 || month > 12) return res.status(400).json({ success: false, error: 'Month must be 01–12' });
       const start = new Date(year, month - 1, 1);
       const end = new Date(year, month, 1);
       query = query.where('batches.expired_at', '>=', start).where('batches.expired_at', '<', end);

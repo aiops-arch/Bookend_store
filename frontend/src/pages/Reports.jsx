@@ -224,7 +224,8 @@ function LowStockTab() {
                 <thead>
                   <tr>
                     <th style={s.th}>Item Code</th>
-                    <th style={s.th}>Sub-Category</th>
+                    <th style={s.th}>Item Name</th>
+                    <th style={s.th}>Category</th>
                     <th style={s.th}>Unit</th>
                     <th style={s.th}>Live Stock</th>
                     <th style={s.th}>ROP</th>
@@ -235,7 +236,8 @@ function LowStockTab() {
                   {data.map((r, i) => (
                     <tr key={r.item_id}>
                       <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.item_code}</td>
-                      <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.sub_category_name}</td>
+                      <td style={i % 2 === 0 ? s.td : s.tdAlt}><strong>{r.item_name || r.sub_category_name}</strong></td>
+                      <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.category_name}</td>
                       <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.unit}</td>
                       <td style={i % 2 === 0 ? s.td : s.tdAlt}>{fmt(r.live_stock_kg)}</td>
                       <td style={i % 2 === 0 ? s.td : s.tdAlt}>{fmt(r.rop_kg)}</td>
@@ -305,20 +307,34 @@ function DeadStockTab() {
                   <thead>
                     <tr>
                       <th style={s.th}>Item Code</th>
-                      <th style={s.th}>Sub-Category</th>
+                      <th style={s.th}>Item Name</th>
+                      <th style={s.th}>Category</th>
                       <th style={s.th}>Stock (kg)</th>
                       <th style={s.th}>Last Dispatch</th>
+                      <th style={s.th}>Nearest Expiry</th>
+                      <th style={s.th}>Days to Expiry</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {data.map((r, i) => (
-                      <tr key={r.item_id}>
-                        <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.item_code}</td>
-                        <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.sub_category_name}</td>
-                        <td style={i % 2 === 0 ? s.td : s.tdAlt}>{fmt(r.stock_kg)}</td>
-                        <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.last_dispatch ? fmtDate(r.last_dispatch) : 'Never'}</td>
-                      </tr>
-                    ))}
+                    {data.map((r, i) => {
+                      const daysLeft = r.days_to_nearest_expiry !== null ? parseInt(r.days_to_nearest_expiry) : null;
+                      const expiryColor = daysLeft === null ? 'var(--text-4)' : daysLeft <= 7 ? 'var(--danger)' : daysLeft <= 30 ? '#F59E0B' : 'var(--text-2)';
+                      return (
+                        <tr key={r.item_id}>
+                          <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.item_code}</td>
+                          <td style={i % 2 === 0 ? s.td : s.tdAlt}><strong>{r.item_name || r.sub_category_name}</strong></td>
+                          <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.category_name}</td>
+                          <td style={i % 2 === 0 ? s.td : s.tdAlt}>{fmt(r.stock_kg)}</td>
+                          <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.last_dispatch ? fmtDate(r.last_dispatch) : <span style={{ color: 'var(--danger)', fontWeight: '600' }}>Never</span>}</td>
+                          <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.nearest_expiry ? fmtDate(r.nearest_expiry) : '—'}</td>
+                          <td style={i % 2 === 0 ? s.td : s.tdAlt}>
+                            {daysLeft !== null
+                              ? <span style={{ color: expiryColor, fontWeight: '600' }}>{daysLeft}d</span>
+                              : <span style={{ color: 'var(--text-4)' }}>—</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </>
@@ -412,7 +428,7 @@ function MarginTab() {
                       {items.map((r, i) => (
                         <tr key={r.item_id}>
                           <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.item_code}</td>
-                          <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.sub_category_name}</td>
+                          <td style={i % 2 === 0 ? s.td : s.tdAlt}>{r.item_name || r.sub_category_name}</td>
                           <td style={i % 2 === 0 ? s.td : s.tdAlt}>{fmt(r.qty_dispatched)}</td>
                           <td style={i % 2 === 0 ? s.td : s.tdAlt}>{fmt(r.avg_dispatch_rate)}</td>
                           <td style={i % 2 === 0 ? s.td : s.tdAlt}>{fmt(r.purchase_rate)}</td>

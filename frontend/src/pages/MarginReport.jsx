@@ -82,9 +82,9 @@ export default function MarginReport() {
     const lines = [
       headers.map(escape).join(','),
       ...reportData.items.map(r => [
-        r.item_code, r.sub_category_name, r.qty_dispatched, r.purchase_rate,
-        r.avg_dispatch_rate.toFixed(2), r.grossMargin.toFixed(2), r.shrinkage.toFixed(2),
-        r.netMargin.toFixed(2), r.marginPct, r.expired_qty
+        r.item_code, r.item_name || r.sub_category_name, r.qty_dispatched, r.purchase_rate,
+        (r.avg_dispatch_rate || 0).toFixed(2), (r.grossMargin || 0).toFixed(2),
+        (r.shrinkage || 0).toFixed(2), (r.netMargin || 0).toFixed(2), r.marginPct, r.expired_qty
       ].map(escape).join(','))
     ];
     const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
@@ -98,9 +98,9 @@ export default function MarginReport() {
 
   const items = reportData?.items || [];
   const totals = reportData?.totals || {};
-  const totalRevenue = items.reduce((s, r) => s + (r.avg_dispatch_rate * r.qty_dispatched), 0);
-  const netMarginPct = totals.totalGrossMargin
-    ? Math.round((totals.totalNetMargin / (totalRevenue || 1)) * 100)
+  const totalRevenue = items.reduce((s, r) => s + ((r.avg_dispatch_rate || 0) * (r.qty_dispatched || 0)), 0);
+  const netMarginPct = totalRevenue > 0
+    ? Math.round((totals.totalNetMargin / totalRevenue) * 100)
     : 0;
 
   return (
@@ -170,7 +170,7 @@ export default function MarginReport() {
                   {items.map(r => (
                     <tr key={r.item_id} style={{ background: '#fff' }}>
                       <td style={S.td}><code style={{ fontSize: '12px' }}>{r.item_code}</code></td>
-                      <td style={S.td}>{r.sub_category_name}</td>
+                      <td style={S.td}>{r.item_name || r.sub_category_name}</td>
                       <td style={S.tdRight}>{fmt(r.qty_dispatched)}</td>
                       <td style={S.tdRight}>Rs {fmt(r.purchase_rate)}</td>
                       <td style={S.tdRight}>Rs {fmt(r.avg_dispatch_rate)}</td>
