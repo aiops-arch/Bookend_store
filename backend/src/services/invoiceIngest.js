@@ -208,7 +208,13 @@ async function ingestInvoice(obj, opts = {}) {
     for (const line of obj.lines) {
       const qty = parseFloat(line.qty);
       if (!qty || qty <= 0) throw new Error(`line "${line.name || line.item_code}" has invalid qty`);
-      const { item, how, score } = await resolveLineItem(trx, line, catalog, admin.id, counters);
+      let { item, how, score } = await resolveLineItem(trx, line, catalog, admin.id, counters);
+      // Backfill variant_grade if item has none but this line has a name
+      const lineName = (line.name || '').trim();
+      if (lineName && (!item.variant_grade || !item.variant_grade.trim())) {
+        await trx('items').where({ id: item.id }).update({ variant_grade: lineName.slice(0, 50) });
+        item = await trx('items').where({ id: item.id }).first();
+      }
       const rate = line.rate != null && !isNaN(parseFloat(line.rate)) ? parseFloat(line.rate) : 0;
       const expiry = toISO(line.expiry_date);
       const num = (...vals) => { for (const v of vals) { if (v != null && !isNaN(parseFloat(v))) return parseFloat(v); } return null; };

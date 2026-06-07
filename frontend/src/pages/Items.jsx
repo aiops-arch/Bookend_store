@@ -1091,7 +1091,7 @@ export default function Items() {
                     </td>
                     <td style={s.td}>
                       <div style={{ fontWeight: '500', color: 'var(--text-1)', fontSize: '13px' }}>
-                        {item.variant_grade || item.sub_category_name || '—'}
+                        {item.variant_grade || item.source_name || item.sub_category_name || '—'}
                       </div>
                       {item.barcode && (
                         <div style={{ fontSize: '11px', color: 'var(--text-4)', marginTop: '2px', fontFamily: 'ui-monospace, monospace' }}>

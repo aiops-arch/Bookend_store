@@ -72,6 +72,9 @@ router.get('/', authenticate, async (req, res, next) => {
         'locations.name as location_name',
         db.raw(
           '(SELECT COALESCE(SUM(b.qty_remaining), 0) FROM batches b WHERE b.item_id = items.id AND b.qty_remaining > 0) as live_stock_kg'
+        ),
+        db.raw(
+          '(SELECT il.source_name FROM inward_lines il WHERE il.item_id = items.id AND il.source_name IS NOT NULL ORDER BY il.id DESC LIMIT 1) as source_name'
         )
       )
       .join('sub_categories', 'sub_categories.id', 'items.sub_category_id')
