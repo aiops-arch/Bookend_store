@@ -95,6 +95,7 @@ router.get('/:id', authenticate, async (req, res, next) => {
         'outward_lines.*',
         'items.item_code',
         'items.unit',
+        'items.variant_grade',
         'sub_categories.name as sub_category_name',
         'batches.receipt_date',
         'batches.expiry_date as batch_expiry'

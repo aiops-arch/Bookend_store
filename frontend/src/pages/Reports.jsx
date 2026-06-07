@@ -119,7 +119,7 @@ function ExpiryAlertsTab() {
                 <thead>
                   <tr>
                     <th style={s.th}>Item Code</th>
-                    <th style={s.th}>Sub-Category</th>
+                    <th style={s.th}>Item Name</th>
                     <th style={s.th}>Batch ID</th>
                     <th style={s.th}>Qty (kg)</th>
                     <th style={s.th}>Expiry Date</th>

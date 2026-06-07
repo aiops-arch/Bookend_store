@@ -183,7 +183,7 @@ export default function OutwardDetail() {
             <thead>
               <tr>
                 <th style={S.th}>Item Code</th>
-                <th style={S.th}>Sub-Category</th>
+                <th style={S.th}>Item Name</th>
                 <th style={S.th}>Batch ID</th>
                 <th style={S.th}>Qty</th>
                 <th style={S.th}>Rate (₹)</th>
@@ -198,7 +198,7 @@ export default function OutwardDetail() {
                 return (
                   <tr key={l.id}>
                     <td style={S.td}><span style={{ fontFamily: 'monospace', fontSize: '12px', background: 'var(--surface-2)', padding: '2px 6px', borderRadius: 'var(--radius)' }}>{l.item_code}</span></td>
-                    <td style={S.td}>{l.sub_category_name}</td>
+                    <td style={S.td}>{l.variant_grade || l.sub_category_name}</td>
                     <td style={S.td}>{l.batch_id ? <span style={{ fontFamily: 'monospace', color: 'var(--success)', fontSize: '12px' }}>#{l.batch_id}</span> : <span style={{ color: 'var(--text-4)' }}>Pending</span>}</td>
                     <td style={S.td}>{l.qty} {l.unit}</td>
                     <td style={S.td}>{l.rate ? `₹${l.rate}` : '—'}</td>

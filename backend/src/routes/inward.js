@@ -568,6 +568,7 @@ router.get('/:id', authenticate, async (req, res, next) => {
         'inward_lines.*',
         'items.item_code',
         'items.unit',
+        'items.variant_grade',
         'sub_categories.name as sub_category_name'
       )
       .join('items', 'items.id', 'inward_lines.item_id')
