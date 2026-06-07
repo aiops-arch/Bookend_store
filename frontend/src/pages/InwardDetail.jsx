@@ -248,7 +248,7 @@ export default function InwardDetail() {
               {lines.map(l => (
                 <tr key={l.id}>
                   <td style={S.td}><span style={{ fontFamily: 'monospace', fontSize: '12px', background: 'var(--surface-2)', padding: '2px 6px', borderRadius: 'var(--radius)' }}>{l.item_code}</span></td>
-                  <td style={S.td}>{l.variant_grade || l.sub_category_name}</td>
+                  <td style={S.td}>{l.source_name || l.variant_grade || l.sub_category_name}</td>
                   <td style={S.td}>{l.qty} {l.unit}</td>
                   <td style={S.td}>₹{l.rate}</td>
                   <td style={S.td}>{l.expiry_date || '—'}</td>
