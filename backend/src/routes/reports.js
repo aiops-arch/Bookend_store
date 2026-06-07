@@ -510,8 +510,9 @@ router.get('/export/:type', authenticate, async (req, res, next) => {
           'items.item_code', 'items.barcode', 'items.hsn_code',
           'sub_categories.name as sub_category', 'categories.name as category',
           'items.unit', 'items.variant_grade', 'items.purchase_rate', 'items.mrp',
-          'items.description',
-          'items.rop_kg', db.raw('COALESCE(stock.live_stock, 0) as live_stock_kg')
+          'items.description', 'items.item_image_url',
+          'items.rop_kg', db.raw('COALESCE(stock.live_stock, 0) as live_stock_kg'),
+          db.raw('(SELECT ip.storage_url FROM item_photos ip WHERE ip.item_id = items.id ORDER BY ip.sort_order, ip.id LIMIT 1) as first_photo_url')
         )
         .orderBy('categories.name')
         .orderBy('items.item_code');
@@ -531,7 +532,8 @@ router.get('/export/:type', authenticate, async (req, res, next) => {
         'MRP': r.mrp || '',
         'Live Stock (kg)': liveStock,
         'Amount': exactAmount ?? liveStock * rate,
-        'ROP (kg)': r.rop_kg || 0
+        'ROP (kg)': r.rop_kg || 0,
+        'Photo': r.item_image_url || r.first_photo_url || ''
         };
       });
       rows = withCategoryTotals(rows);
@@ -547,8 +549,10 @@ router.get('/export/:type', authenticate, async (req, res, next) => {
           'categories.name as category',
           'sub_categories.name as sub_category',
           'items.item_code', 'items.variant_grade', 'items.purchase_rate', 'items.description',
+          'items.item_image_url',
           'batches.id as batch_id', 'batches.receipt_date',
           'batches.expiry_date', 'batches.qty_received', 'batches.qty_remaining', 'batches.risk_score',
+          db.raw('(SELECT ip.storage_url FROM item_photos ip WHERE ip.item_id = items.id ORDER BY ip.sort_order, ip.id LIMIT 1) as first_photo_url')
         )
         .orderBy('categories.name')
         .orderBy('items.item_code')
@@ -569,7 +573,8 @@ router.get('/export/:type', authenticate, async (req, res, next) => {
         'Qty Remaining (kg)': qtyRemaining,
         'Rate': rate,
         'Amount': exactAmount && qtyReceived ? exactAmount * (qtyRemaining / qtyReceived) : qtyRemaining * rate,
-        'Risk Score': r.risk_score || 0
+        'Risk Score': r.risk_score || 0,
+        'Photo': r.item_image_url || r.first_photo_url || ''
         };
       });
       rows = withCategoryTotals(rows);
@@ -588,8 +593,9 @@ router.get('/export/:type', authenticate, async (req, res, next) => {
           'vendors.name as vendor_name',
           'categories.name as category',
           'sub_categories.name as sub_category',
-          'items.item_code', 'items.variant_grade',
-          'inward_lines.qty', 'inward_lines.rate', 'inward_lines.expiry_date'
+          'items.item_code', 'items.variant_grade', 'items.item_image_url',
+          'inward_lines.qty', 'inward_lines.rate', 'inward_lines.expiry_date',
+          db.raw('(SELECT ip.storage_url FROM item_photos ip WHERE ip.item_id = items.id ORDER BY ip.sort_order, ip.id LIMIT 1) as first_photo_url')
         )
         .orderBy('categories.name')
         .orderByRaw('(inward_lines.qty * inward_lines.rate) DESC');
@@ -604,7 +610,8 @@ router.get('/export/:type', authenticate, async (req, res, next) => {
         'Qty (kg)': parseFloat(r.qty) || 0,
         'Rate': parseFloat(r.rate) || 0,
         'Amount': (parseFloat(r.qty) || 0) * (parseFloat(r.rate) || 0),
-        'Expiry Date': r.expiry_date ? String(r.expiry_date).slice(0, 10) : ''
+        'Expiry Date': r.expiry_date ? String(r.expiry_date).slice(0, 10) : '',
+        'Photo': r.item_image_url || r.first_photo_url || ''
       }));
       rows = withCategoryTotals(rows);
 
@@ -622,8 +629,9 @@ router.get('/export/:type', authenticate, async (req, res, next) => {
           'customers.name as customer_name',
           'categories.name as category',
           'sub_categories.name as sub_category',
-          'items.item_code', 'items.variant_grade',
-          'outward_lines.batch_id', 'outward_lines.qty', 'outward_lines.rate'
+          'items.item_code', 'items.variant_grade', 'items.item_image_url',
+          'outward_lines.batch_id', 'outward_lines.qty', 'outward_lines.rate',
+          db.raw('(SELECT ip.storage_url FROM item_photos ip WHERE ip.item_id = items.id ORDER BY ip.sort_order, ip.id LIMIT 1) as first_photo_url')
         )
         .orderBy('categories.name')
         .orderByRaw('(outward_lines.qty * COALESCE(outward_lines.rate, 0)) DESC');
@@ -638,7 +646,8 @@ router.get('/export/:type', authenticate, async (req, res, next) => {
         'Batch ID': r.batch_id || '',
         'Qty (kg)': parseFloat(r.qty) || 0,
         'Rate': parseFloat(r.rate) || 0,
-        'Amount': (parseFloat(r.qty) || 0) * (parseFloat(r.rate) || 0)
+        'Amount': (parseFloat(r.qty) || 0) * (parseFloat(r.rate) || 0),
+        'Photo': r.item_image_url || r.first_photo_url || ''
       }));
       rows = withCategoryTotals(rows);
 
@@ -647,6 +656,25 @@ router.get('/export/:type', authenticate, async (req, res, next) => {
     }
 
     const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Wire up hyperlinks on the Photo column
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    let photoColIdx = -1;
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const hdr = ws[XLSX.utils.encode_cell({ r: 0, c })];
+      if (hdr && hdr.v === 'Photo') { photoColIdx = c; break; }
+    }
+    if (photoColIdx >= 0) {
+      for (let r = 1; r <= range.e.r; r++) {
+        const cellRef = XLSX.utils.encode_cell({ r, c: photoColIdx });
+        const cell = ws[cellRef];
+        if (cell && cell.v) {
+          cell.l = { Target: cell.v, Tooltip: 'Click to view photo' };
+          cell.v = 'View Photo';
+        }
+      }
+    }
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
