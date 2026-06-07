@@ -31,19 +31,32 @@ const upload = multer({
 
 const path = require('path');
 const fs = require('fs');
-const photoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../../uploads/photos');
-    fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `item-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+const { Readable } = require('stream');
+
+// Cloudinary: used when CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME is set in env
+let cloudinaryUpload = null;
+if (process.env.CLOUDINARY_URL || process.env.CLOUDINARY_CLOUD_NAME) {
+  const { v2: cloudinary } = require('cloudinary');
+  if (process.env.CLOUDINARY_URL) {
+    cloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
+  } else {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
   }
-});
+  cloudinaryUpload = (buffer, mimetype) => new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'fg-inventory', resource_type: 'image' },
+      (err, result) => err ? reject(err) : resolve(result.secure_url)
+    );
+    Readable.from(buffer).pipe(stream);
+  });
+}
+
 const uploadPhoto = multer({
-  storage: photoStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
@@ -868,7 +881,20 @@ router.post('/:id/photos', authenticate, authorize('admin', 'purchase', 'warehou
     if (!req.file) return res.status(400).json({ success: false, error: 'photo file required' });
     const item = await db('items').where({ id: req.params.id }).first();
     if (!item) return res.status(404).json({ success: false, error: 'Item not found' });
-    const storage_url = `/uploads/photos/${req.file.filename}`;
+
+    let storage_url;
+    if (cloudinaryUpload) {
+      storage_url = await cloudinaryUpload(req.file.buffer, req.file.mimetype);
+    } else {
+      // Fall back to local disk storage
+      const dir = path.join(__dirname, '../../uploads/photos');
+      fs.mkdirSync(dir, { recursive: true });
+      const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+      const filename = `item-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+      fs.writeFileSync(path.join(dir, filename), req.file.buffer);
+      storage_url = `/uploads/photos/${filename}`;
+    }
+
     const [photo] = await db('item_photos').insert({ item_id: req.params.id, storage_url, label: req.body.label || null }).returning('*');
     res.status(201).json({ success: true, data: photo });
   } catch (err) { next(err); }
@@ -879,8 +905,21 @@ router.delete('/:id/photos/:photoId', authenticate, authorize('admin'), async (r
   try {
     const photo = await db('item_photos').where({ id: req.params.photoId, item_id: req.params.id }).first();
     if (!photo) return res.status(404).json({ success: false, error: 'Photo not found' });
-    const filePath = path.join(__dirname, '../../uploads/photos', path.basename(photo.storage_url));
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    if (photo.storage_url && photo.storage_url.includes('cloudinary.com')) {
+      // Extract public_id from Cloudinary URL and delete from cloud
+      try {
+        const { v2: cloudinary } = require('cloudinary');
+        const parts = photo.storage_url.split('/');
+        const filename = parts[parts.length - 1].replace(/\.[^/.]+$/, '');
+        const folder = parts[parts.length - 2];
+        await cloudinary.uploader.destroy(`${folder}/${filename}`);
+      } catch { /* best-effort */ }
+    } else if (photo.storage_url && photo.storage_url.startsWith('/uploads/')) {
+      const filePath = path.join(__dirname, '../../uploads/photos', path.basename(photo.storage_url));
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+
     await db('item_photos').where({ id: req.params.photoId }).delete();
     res.json({ success: true, data: { deleted: true } });
   } catch (err) { next(err); }

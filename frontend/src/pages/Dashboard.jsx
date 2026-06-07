@@ -778,6 +778,8 @@ export default function Dashboard() {
   const [lastFetched, setLastFetched] = useState(null);
   const [elapsed, setElapsed]   = useState(0);
   const elapsedRef              = useRef(null);
+  const [cronRunning, setCronRunning] = useState(false);
+  const [cronMsg, setCronMsg]   = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -873,6 +875,29 @@ export default function Dashboard() {
             {lastFetched && !loading && (
               <span style={sb.lastUpdated}>Updated {elapsedLabel}</span>
             )}
+            {user.role === 'admin' && (
+              <button
+                style={{ ...sb.refreshBtn, background: cronRunning ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.3)', color: '#10b981' }}
+                onClick={async () => {
+                  if (cronRunning) return;
+                  setCronRunning(true);
+                  setCronMsg('');
+                  try {
+                    const res = await client.post('/reports/run-nightly');
+                    const d = res.data?.data || {};
+                    setCronMsg(`Done — ${d.batchesScored ?? 0} batches scored, ${d.itemsUpdated ?? 0} items ROP updated`);
+                    setTimeout(() => load(), 800);
+                  } catch (e) {
+                    setCronMsg('Failed: ' + (e.response?.data?.error || e.message));
+                  } finally {
+                    setCronRunning(false);
+                  }
+                }}
+                title="Recalculate risk scores, ROP, and mark expired batches"
+              >
+                {cronRunning ? '⏳ Running…' : '▶ Run Intelligence'}
+              </button>
+            )}
             <button style={sb.refreshBtn} onClick={load} disabled={loading}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
                 strokeLinecap="round" strokeLinejoin="round"
@@ -883,6 +908,11 @@ export default function Dashboard() {
               {loading ? 'Loading…' : 'Refresh'}
             </button>
           </div>
+          {cronMsg && (
+            <div style={{ position: 'absolute', bottom: '-32px', right: '32px', fontSize: '12px', color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 'var(--radius)', padding: '4px 12px', zIndex: 2 }}>
+              {cronMsg}
+            </div>
+          )}
         </div>
       </div>
 
