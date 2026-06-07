@@ -625,8 +625,30 @@ function ExportTab() {
     }
   ];
 
+  function printAuditSheet() {
+    const token = localStorage.getItem('fg_token');
+    const url = `/api/reports/stock-audit-print?token=${encodeURIComponent(token)}`;
+    window.open(url, '_blank');
+  }
+
   return (
     <div style={s.exportGrid}>
+      {/* Stock Audit Sheet — full-width at top */}
+      <div style={{ ...s.exportCard, gridColumn: '1 / -1', background: 'var(--primary-dim)', borderColor: 'var(--primary)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ ...s.exportTitle, color: 'var(--primary)' }}>🖨 Print Stock Audit Sheet</div>
+            <div style={s.exportDesc}>
+              Opens a printable page with every in-stock item showing its <strong>photo</strong>, system quantity, and blank lines for the physical count and difference.
+              Hand it to anyone — even someone who has never seen the items — and they can count by matching the picture.
+            </div>
+          </div>
+          <button style={{ ...s.btn, flexShrink: 0, alignSelf: 'center' }} onClick={printAuditSheet}>
+            Open &amp; Print
+          </button>
+        </div>
+      </div>
+
       {exports.map(ex => (
         <div key={ex.type} style={s.exportCard}>
           <div style={s.exportTitle}>{ex.title}</div>

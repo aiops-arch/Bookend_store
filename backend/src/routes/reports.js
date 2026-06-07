@@ -899,6 +899,125 @@ router.get('/mis-dashboard', authenticate, async (req, res, next) => {
   }
 });
 
+// GET /api/reports/stock-audit-print — printable stock audit sheet with item photos
+router.get('/stock-audit-print', authenticate, async (req, res, next) => {
+  try {
+    const base = `${req.protocol}://${req.get('host')}`;
+
+    const rows = await db.raw(`
+      SELECT
+        i.id, i.item_code, i.unit,
+        COALESCE(i.variant_grade, '') AS item_name,
+        i.item_image_url,
+        sc.name AS sub_category_name,
+        c.name  AS category_name,
+        COALESCE(SUM(b.qty_remaining), 0) AS live_stock,
+        (SELECT ip.storage_url FROM item_photos ip
+         WHERE ip.item_id = i.id ORDER BY ip.sort_order, ip.id LIMIT 1) AS first_photo_url
+      FROM items i
+      JOIN sub_categories sc ON sc.id = i.sub_category_id
+      JOIN categories      c  ON c.id  = sc.category_id
+      LEFT JOIN batches b ON b.item_id = i.id AND b.qty_remaining > 0
+      WHERE i.is_active = true
+      GROUP BY i.id, sc.name, c.name
+      HAVING COALESCE(SUM(b.qty_remaining), 0) > 0
+      ORDER BY c.name, sc.name, i.item_code
+    `);
+
+    const items = rows.rows;
+
+    const photoUrl = (item) => {
+      if (item.item_image_url) return item.item_image_url;
+      if (item.first_photo_url) return base + item.first_photo_url;
+      return null;
+    };
+
+    const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const cards = items.map(item => {
+      const img = photoUrl(item);
+      const name = item.item_name || item.sub_category_name;
+      const stock = parseFloat(item.live_stock) || 0;
+      return `
+        <div class="card">
+          <div class="photo-box">
+            ${img
+              ? `<img src="${img}" alt="${name}" onerror="this.style.display='none';this.nextSibling.style.display='flex'" /><div class="no-photo" style="display:none">📦</div>`
+              : `<div class="no-photo">📦</div>`}
+          </div>
+          <div class="item-name">${name}</div>
+          <div class="item-code">${item.item_code}</div>
+          <div class="stock-row">
+            <span class="stock-label">System:</span>
+            <span class="stock-val">${stock.toFixed(2)} ${item.unit}</span>
+          </div>
+          <div class="count-row">
+            <span class="stock-label">Counted:</span>
+            <span class="count-line">___________</span>
+          </div>
+          <div class="diff-row">
+            <span class="stock-label">Diff:</span>
+            <span class="count-line">___________</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stock Audit Sheet — ${dateStr}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 12px; background: #fff; color: #111; }
+  .page-header { padding: 14px 20px 10px; border-bottom: 2px solid #333; display: flex; justify-content: space-between; align-items: flex-end; }
+  .page-header h1 { font-size: 18px; font-weight: 700; }
+  .page-header .meta { font-size: 11px; color: #555; text-align: right; line-height: 1.6; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px 16px; }
+  .card { border: 1.5px solid #ccc; border-radius: 6px; padding: 8px; break-inside: avoid; }
+  .photo-box { width: 100%; height: 100px; background: #f5f5f5; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 7px; }
+  .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+  .no-photo { font-size: 36px; color: #bbb; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+  .item-name { font-weight: 700; font-size: 12px; margin-bottom: 2px; line-height: 1.3; min-height: 30px; }
+  .item-code { font-family: monospace; font-size: 10px; color: #666; background: #f0f0f0; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-bottom: 7px; }
+  .stock-row, .count-row, .diff-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .stock-label { font-size: 10px; color: #555; width: 52px; flex-shrink: 0; }
+  .stock-val { font-weight: 700; font-size: 12px; color: #1a7f37; }
+  .count-line { flex: 1; border-bottom: 1.5px solid #333; margin-left: 4px; height: 16px; }
+  .diff-row .count-line { border-bottom: 1.5px dashed #999; }
+  .footer { padding: 8px 20px; font-size: 10px; color: #888; border-top: 1px solid #ddd; text-align: center; }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .grid { grid-template-columns: repeat(4, 1fr); }
+    @page { size: A4; margin: 10mm; }
+  }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <div>
+    <h1>Stock Audit Sheet</h1>
+    <div style="font-size:12px;color:#555;margin-top:3px">Compare system stock vs physical count · Sign &amp; date each page after counting</div>
+  </div>
+  <div class="meta">
+    Date: ${dateStr}<br>
+    Total items: ${items.length}<br>
+    Auditor: ___________________
+  </div>
+</div>
+<div class="grid">${cards}</div>
+<div class="footer">Generated by K Girdharlal Inventory · ${dateStr} · System stock values are as of print time</div>
+<script>window.onload = function() { window.print(); }</script>
+</body>
+</html>`;
+
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/reports/run-nightly — admin only manual trigger
 router.post('/run-nightly', authenticate, authorize('admin'), async (req, res, next) => {
   try {

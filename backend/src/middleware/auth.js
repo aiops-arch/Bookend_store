@@ -6,11 +6,13 @@ if (!process.env.JWT_SECRET) {
 
 function authenticate(req, res, next) {
   const header = req.headers['authorization'];
-  if (!header || !header.startsWith('Bearer ')) {
+  // Also accept ?token= for browser-opened print/download URLs
+  const raw = (header && header.startsWith('Bearer ') ? header.slice(7) : null) || req.query.token;
+  if (!raw) {
     return res.status(401).json({ success: false, error: 'Missing or invalid Authorization header' });
   }
 
-  const token = header.slice(7);
+  const token = raw;
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.user = { id: payload.id, role: payload.role, name: payload.name };
