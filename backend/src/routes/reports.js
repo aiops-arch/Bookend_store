@@ -976,7 +976,7 @@ router.get('/stock-audit-print', authenticate, async (req, res, next) => {
   .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px 16px; }
   .card { border: 1.5px solid #ccc; border-radius: 6px; padding: 8px; break-inside: avoid; }
   .photo-box { width: 100%; height: 100px; background: #f5f5f5; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 7px; }
-  .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-box img { width: 100%; height: 100%; object-fit: cover; filter: blur(3px); transform: scale(1.08); }
   .no-photo { font-size: 36px; color: #bbb; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
   .item-name { font-weight: 700; font-size: 12px; margin-bottom: 2px; line-height: 1.3; min-height: 30px; }
   .item-code { font-family: monospace; font-size: 10px; color: #666; background: #f0f0f0; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-bottom: 7px; }
