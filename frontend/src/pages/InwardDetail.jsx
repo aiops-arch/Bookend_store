@@ -248,7 +248,12 @@ export default function InwardDetail() {
               {lines.map(l => (
                 <tr key={l.id}>
                   <td style={S.td}><span style={{ fontFamily: 'monospace', fontSize: '12px', background: 'var(--surface-2)', padding: '2px 6px', borderRadius: 'var(--radius)' }}>{l.item_code}</span></td>
-                  <td style={S.td}>{l.source_name || l.variant_grade || l.sub_category_name}</td>
+                  <td style={S.td}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {(() => { const src = l.item_image_url || l.first_photo_url; return src ? <img src={src} alt="" style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border)', flexShrink: 0 }} /> : <div style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>📦</div>; })()}
+                      {l.source_name || l.variant_grade || l.sub_category_name}
+                    </div>
+                  </td>
                   <td style={S.td}>{l.qty} {l.unit}</td>
                   <td style={S.td}>₹{l.rate}</td>
                   <td style={S.td}>{l.expiry_date || '—'}</td>

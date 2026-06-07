@@ -96,9 +96,11 @@ router.get('/:id', authenticate, async (req, res, next) => {
         'items.item_code',
         'items.unit',
         'items.variant_grade',
+        'items.item_image_url',
         'sub_categories.name as sub_category_name',
         'batches.receipt_date',
-        'batches.expiry_date as batch_expiry'
+        'batches.expiry_date as batch_expiry',
+        db.raw('(SELECT ip.storage_url FROM item_photos ip WHERE ip.item_id = items.id ORDER BY ip.sort_order, ip.id LIMIT 1) as first_photo_url')
       )
       .join('items', 'items.id', 'outward_lines.item_id')
       .join('sub_categories', 'sub_categories.id', 'items.sub_category_id')
