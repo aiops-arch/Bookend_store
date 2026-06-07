@@ -56,6 +56,7 @@ export default function Users() {
   const navigate = useNavigate();
   const currentUser = safeUser();
   const [users, setUsers] = useState([]);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState(emptyAdd);
@@ -96,7 +97,9 @@ export default function Users() {
 
   async function handleAdd() {
     const { name, email, role, password } = addForm;
-    if (!name || !email || !role || !password) return alert('All fields are required');
+    if (!name || !email || !role) return alert('All fields are required');
+    const pwErr = pwdError(password);
+    if (pwErr) return alert(pwErr);
     setSaving(true);
     try {
       await client.post('/users', { name, email, role, password });
@@ -134,9 +137,18 @@ export default function Users() {
     }
   }
 
+  function pwdError(pw) {
+    if (!pw) return 'Password cannot be empty';
+    if (pw.length < 8) return 'Password must be at least 8 characters';
+    if (!/[A-Z]/.test(pw)) return 'Password must contain at least one uppercase letter';
+    if (!/[a-z]/.test(pw)) return 'Password must contain at least one lowercase letter';
+    if (!/\d/.test(pw)) return 'Password must contain at least one digit';
+    return null;
+  }
+
   async function handleResetPassword() {
-    if (!resetPwd) return alert('Password cannot be empty');
-    if (resetPwd.length < 6) return alert('Password must be at least 6 characters');
+    const err = pwdError(resetPwd);
+    if (err) return alert(err);
     setSaving(true);
     try {
       await client.put(`/users/${resetTarget.id}`, { password: resetPwd });
@@ -172,9 +184,17 @@ export default function Users() {
       <div style={S.content}>
         <div style={S.topRow}>
           <h2 style={S.pageTitle}>User Management</h2>
-          <button style={S.addBtn} onClick={() => { setShowAdd(true); setAddForm(emptyAdd); }}>
-            + Add User
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <input
+              style={{ ...S.input, width: '200px' }}
+              placeholder="Search name or email..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <button style={S.addBtn} onClick={() => { setShowAdd(true); setAddForm(emptyAdd); }}>
+              + Add User
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -193,10 +213,18 @@ export default function Users() {
                 </tr>
               </thead>
               <tbody>
-                {users.length === 0 && (
-                  <tr><td colSpan={6} style={S.empty}>No users found</td></tr>
+                {users.filter(u => {
+                  if (!search.trim()) return true;
+                  const q = search.trim().toLowerCase();
+                  return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+                }).length === 0 && (
+                  <tr><td colSpan={6} style={S.empty}>{search ? `No users matching "${search}"` : 'No users found'}</td></tr>
                 )}
-                {users.map(u => (
+                {users.filter(u => {
+                  if (!search.trim()) return true;
+                  const q = search.trim().toLowerCase();
+                  return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+                }).map(u => (
                   <tr key={u.id} style={!u.is_active ? { opacity: 0.7 } : {}}>
                     <td style={S.td}>
                       {u.name}
@@ -283,6 +311,11 @@ export default function Users() {
                 onChange={e => setAddForm(f => ({ ...f, password: e.target.value }))}
                 placeholder="Set initial password"
               />
+              <div style={{ ...S.hint, color: pwdError(addForm.password) && addForm.password ? 'var(--danger)' : 'var(--text-4)' }}>
+                {pwdError(addForm.password) && addForm.password
+                  ? pwdError(addForm.password)
+                  : 'Min 8 chars, one uppercase, one lowercase, one digit'}
+              </div>
             </div>
             <div style={S.btnRow}>
               <button style={S.cancelBtn} onClick={() => setShowAdd(false)}>Cancel</button>
@@ -365,9 +398,14 @@ export default function Users() {
                 style={S.input}
                 value={resetPwd}
                 onChange={e => setResetPwd(e.target.value)}
-                placeholder="Enter new password (min 6 chars)"
+                placeholder="Enter new password"
                 autoFocus
               />
+              <div style={{ ...S.hint, color: pwdError(resetPwd) && resetPwd ? 'var(--danger)' : 'var(--text-4)' }}>
+                {pwdError(resetPwd) && resetPwd
+                  ? pwdError(resetPwd)
+                  : 'Min 8 chars, one uppercase, one lowercase, one digit'}
+              </div>
             </div>
             <div style={S.btnRow}>
               <button style={S.cancelBtn} onClick={() => setResetTarget(null)}>Cancel</button>

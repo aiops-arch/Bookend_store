@@ -69,4 +69,21 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), async (req, res, n
   }
 });
 
+// DELETE /api/customers/:id — delete customer (admin only, only if no outward entries)
+router.delete('/:id', authenticate, authorize('admin'), async (req, res, next) => {
+  try {
+    const customer = await db('customers').where({ id: req.params.id }).first();
+    if (!customer) return res.status(404).json({ success: false, error: 'Customer not found' });
+    const used = await db('outward_entries').where({ customer_id: req.params.id }).count('id as cnt').first();
+    if (parseInt(used.cnt) > 0) {
+      return res.status(409).json({ success: false, error: 'Cannot delete — customer has outward entries' });
+    }
+    await db('customers').where({ id: req.params.id }).delete();
+    await logAudit({ table_name: 'customers', record_id: customer.id, action: 'DELETE', user_id: req.user.id, old_value: customer });
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

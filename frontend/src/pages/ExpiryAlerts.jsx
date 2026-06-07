@@ -62,6 +62,7 @@ function RiskBadge({ score }) {
 function ExpiringSoonTab({ summaryRef }) {
   const [days, setDays] = useState(30);
   const [data, setData] = useState([]);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -84,6 +85,14 @@ function ExpiringSoonTab({ summaryRef }) {
 
   useEffect(() => { load(); }, [load]);
 
+  const filtered = search.trim()
+    ? data.filter(r => {
+        const q = search.trim().toLowerCase();
+        return (r.item_code || '').toLowerCase().includes(q)
+          || (r.item_name || r.sub_category_name || '').toLowerCase().includes(q);
+      })
+    : data;
+
   return (
     <div>
       <div style={s.filterBar}>
@@ -97,14 +106,27 @@ function ExpiringSoonTab({ summaryRef }) {
             <option key={d} value={d}>{d} days</option>
           ))}
         </select>
+        <input
+          style={{ ...s.input, minWidth: '180px' }}
+          placeholder="Search item code or name..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {search && (
+          <button style={{ ...s.btn, background: 'var(--text-3)' }} onClick={() => setSearch('')}>
+            Clear
+          </button>
+        )}
         <button style={s.btn} onClick={load}>Refresh</button>
       </div>
       {error && <div style={s.error}>{error}</div>}
       {loading && <div style={s.loading}>Loading...</div>}
       {!loading && !error && (
         <div style={s.card}>
-          {data.length === 0
-            ? <div style={s.empty}>No batches expiring within {days} days.</div>
+          {filtered.length === 0
+            ? <div style={s.empty}>
+                {search ? `No results for "${search}"` : `No batches expiring within ${days} days.`}
+              </div>
             : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={s.table}>
@@ -114,13 +136,13 @@ function ExpiringSoonTab({ summaryRef }) {
                       <th style={s.th}>Item Name</th>
                       <th style={s.th}>Batch ID</th>
                       <th style={s.th}>Expiry Date</th>
-                      <th style={s.th}>Days Left</th>
+                      <th style={s.th}>Days Left ↑</th>
                       <th style={s.th}>Qty Remaining (kg)</th>
                       <th style={s.th}>Risk Score</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {data.map((r, i) => {
+                    {filtered.map((r, i) => {
                       const daysLeft = Math.round(r.days_to_expiry);
                       const dayColor = daysLeft <= 7 ? 'var(--danger)' : daysLeft <= 30 ? '#F59E0B' : 'var(--success)';
                       return (
@@ -139,6 +161,11 @@ function ExpiringSoonTab({ summaryRef }) {
                     })}
                   </tbody>
                 </table>
+                {search && filtered.length > 0 && (
+                  <div style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-4)' }}>
+                    Showing {filtered.length} of {data.length} batches
+                  </div>
+                )}
               </div>
             )
           }

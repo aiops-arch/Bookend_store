@@ -132,6 +132,16 @@ export default function Customers() {
     }
   }
 
+  async function handleDelete(c) {
+    if (!window.confirm(`Delete customer "${c.name}"? This cannot be undone.`)) return;
+    try {
+      await client.delete(`/customers/${c.id}`);
+      fetchCustomers(search);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Delete failed');
+    }
+  }
+
   const colSpan = canWrite ? 5 : 4;
 
   return (
@@ -179,6 +189,14 @@ export default function Customers() {
                   {canWrite && (
                     <td style={styles.td}>
                       <button style={styles.actionBtn} onClick={() => openEdit(c)}>Edit</button>
+                      {user.role === 'admin' && (
+                        <button
+                          style={{ ...styles.actionBtn, color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                          onClick={() => handleDelete(c)}
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   )}
                 </tr>

@@ -51,6 +51,7 @@ export default function Outward() {
   const [customers, setCustomers] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ customer_id: '', dispatch_date: '' });
   const canWrite = ['admin', 'sales'].includes(user.role);
@@ -94,6 +95,17 @@ export default function Outward() {
             <option value="confirmed">Confirmed</option>
             <option value="locked">Locked</option>
           </select>
+          <input
+            style={{ ...S.select, minWidth: '220px' }}
+            placeholder="Search customer or challan #..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {search && (
+            <button style={{ ...S.addBtn, background: 'var(--text-3)', fontSize: '12px', padding: '6px 12px' }} onClick={() => setSearch('')}>
+              Clear
+            </button>
+          )}
         </div>
         <div style={S.tableWrap}>
           <table style={S.table}>
@@ -109,10 +121,22 @@ export default function Outward() {
             </thead>
             <tbody>
               {loading && <tr><td colSpan="6" style={S.empty}>Loading...</td></tr>}
-              {!loading && entries.length === 0 && <tr><td colSpan="6" style={S.empty}>No dispatches found</td></tr>}
-              {!loading && entries.map(e => (
+              {!loading && entries.filter(e => {
+                if (!search.trim()) return true;
+                const q = search.trim().toLowerCase();
+                return (e.customer_name || '').toLowerCase().includes(q)
+                  || (e.challan_no || '').toLowerCase().includes(q);
+              }).length === 0 && (
+                <tr><td colSpan="6" style={S.empty}>{search ? `No results for "${search}"` : 'No dispatches found'}</td></tr>
+              )}
+              {!loading && entries.filter(e => {
+                if (!search.trim()) return true;
+                const q = search.trim().toLowerCase();
+                return (e.customer_name || '').toLowerCase().includes(q)
+                  || (e.challan_no || '').toLowerCase().includes(q);
+              }).map(e => (
                 <tr key={e.id}>
-                  <td style={S.td}><span style={{ fontFamily: 'monospace', fontWeight: '600', color: e.challan_no ? 'var(--success)' : 'var(--text-4)' }}>{e.challan_no || `OW-${String(e.id).padStart(4, '0')}`}</span></td>
+                  <td style={S.td}><span style={{ fontFamily: 'monospace', fontWeight: '600' }}>{e.challan_no || `OW-${String(e.id).padStart(4, '0')}`}</span></td>
                   <td style={S.td}>{e.customer_name}</td>
                   <td style={S.td}>{e.dispatch_date}</td>
                   <td style={S.td}><StatusBadge status={e.status} /></td>

@@ -77,7 +77,7 @@ router.get('/', authenticate, async (req, res, next) => {
       .join('sub_categories', 'sub_categories.id', 'items.sub_category_id')
       .join('categories', 'categories.id', 'sub_categories.category_id')
       .leftJoin('locations', 'locations.id', 'items.location_id')
-      .orderBy('items.id');
+      .orderBy('items.id', 'desc');
 
     // Active filter: default to only active items unless ?active=all or ?active=false
     if (!active || active === 'true') {

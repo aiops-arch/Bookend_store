@@ -52,6 +52,7 @@ export default function Inward() {
   const [openPos, setOpenPos] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ po_id: '', vendor_id: '', invoice_no: '', invoice_date: '' });
   const canWrite = ['admin', 'purchase', 'warehouse'].includes(user.role);
@@ -103,6 +104,17 @@ export default function Inward() {
             <option value="confirmed">Confirmed</option>
             <option value="locked">Locked</option>
           </select>
+          <input
+            style={{ ...S.select, minWidth: '220px' }}
+            placeholder="Search vendor or invoice #..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {search && (
+            <button style={{ ...S.addBtn, background: 'var(--text-3)', fontSize: '12px', padding: '6px 12px' }} onClick={() => setSearch('')}>
+              Clear
+            </button>
+          )}
         </div>
         <div style={S.tableWrap}>
           <table style={S.table}>
@@ -120,8 +132,20 @@ export default function Inward() {
             </thead>
             <tbody>
               {loading && <tr><td colSpan="8" style={S.empty}>Loading...</td></tr>}
-              {!loading && entries.length === 0 && <tr><td colSpan="8" style={S.empty}>No inward entries found</td></tr>}
-              {!loading && entries.map(e => (
+              {!loading && entries.filter(e => {
+                if (!search.trim()) return true;
+                const q = search.trim().toLowerCase();
+                return (e.vendor_name || '').toLowerCase().includes(q)
+                  || (e.invoice_no || '').toLowerCase().includes(q);
+              }).length === 0 && !loading && (
+                <tr><td colSpan="8" style={S.empty}>{search ? `No results for "${search}"` : 'No inward entries found'}</td></tr>
+              )}
+              {!loading && entries.filter(e => {
+                if (!search.trim()) return true;
+                const q = search.trim().toLowerCase();
+                return (e.vendor_name || '').toLowerCase().includes(q)
+                  || (e.invoice_no || '').toLowerCase().includes(q);
+              }).map(e => (
                 <tr key={e.id}>
                   <td style={S.td}><span style={{ fontFamily: 'monospace', fontWeight: '600' }}>IN-{String(e.id).padStart(4, '0')}</span></td>
                   <td style={S.td}>{e.vendor_name}</td>

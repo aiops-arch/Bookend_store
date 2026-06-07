@@ -659,12 +659,13 @@ router.post('/:id/confirm', authenticate, authorize('admin', 'purchase', 'wareho
     if (lines.length === 0) { await trx.rollback(); return res.status(409).json({ success: false, error: 'No lines exist on this entry' }); }
 
     const today = new Date().toISOString().split('T')[0];
+    const receiptDate = entry.invoice_date ? String(entry.invoice_date).slice(0, 10) : today;
 
     for (const line of lines) {
       const [batch] = await trx('batches')
         .insert({
           item_id: line.item_id,
-          receipt_date: today,
+          receipt_date: receiptDate,
           expiry_date: line.expiry_date || null,
           qty_received: line.qty,
           qty_remaining: line.qty

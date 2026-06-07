@@ -265,9 +265,13 @@ router.get('/margin', authenticate, async (req, res, next) => {
     }
 
     const result = dispatched.map(row => {
+      const purchaseRate = parseFloat(row.purchase_rate) || 0;
+      const rawRate = parseFloat(row.avg_dispatch_rate);
+      // Fall back to purchase_rate (break-even) when no sale rate was recorded
+      const avgDispatchRate = Number.isFinite(rawRate) ? rawRate : purchaseRate;
       const pnl = itemPnL({
-        avgDispatchRate: parseFloat(row.avg_dispatch_rate) || 0,
-        purchaseRate: parseFloat(row.purchase_rate) || 0,
+        avgDispatchRate,
+        purchaseRate,
         qtyDispatched: parseFloat(row.qty_dispatched) || 0,
         expiredQty: expiredMap[row.item_id] || 0
       });

@@ -801,6 +801,12 @@ export default function Dashboard() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const autoRefresh = setInterval(() => { load(); }, 5 * 60 * 1000);
+    return () => clearInterval(autoRefresh);
+  }, [load]);
+
   useEffect(() => {
     if (!lastFetched) return;
     if (elapsedRef.current) clearInterval(elapsedRef.current);

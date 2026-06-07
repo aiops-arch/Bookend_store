@@ -740,6 +740,8 @@ export default function Items() {
   const [bulkLocation, setBulkLocation] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [newItemId, setNewItemId] = useState(null);
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   function handleTourDone() {
     localStorage.setItem('fg_tour_done', '1');
@@ -793,11 +795,24 @@ export default function Items() {
   async function handleSave(payload) {
     if (editingItem) {
       await client.put(`/items/${editingItem.id}`, payload);
+      setShowForm(false);
+      fetchItems(search, categoryFilter, activeFilter, locationFilter, tagFilter);
     } else {
-      await client.post('/items', payload);
+      const res = await client.post('/items', payload);
+      const createdId = res.data?.data?.id;
+      setShowForm(false);
+      // Reset filters so the newly created (active) item is guaranteed visible at the top
+      setActiveFilter('true');
+      setSearch('');
+      setCategoryFilter('');
+      setLocationFilter('');
+      setTagFilter('');
+      await fetchItems('', '', 'true', '', '');
+      if (createdId) {
+        setNewItemId(createdId);
+        setTimeout(() => setNewItemId(null), 3000);
+      }
     }
-    setShowForm(false);
-    fetchItems(search, categoryFilter, activeFilter, locationFilter, tagFilter);
   }
 
   async function handleDelete(item) {
@@ -834,7 +849,8 @@ export default function Items() {
   }
 
   async function handleBulkApplyLocation() {
-    if (!bulkLocation || selectedIds.length === 0) return;
+    if (!bulkLocation || selectedIds.length === 0 || bulkSaving) return;
+    setBulkSaving(true);
     try {
       await client.patch('/items/bulk', { ids: selectedIds, fields: { location_id: Number(bulkLocation) } });
       setSelectedIds([]);
@@ -842,6 +858,8 @@ export default function Items() {
       fetchItems(search, categoryFilter, activeFilter, locationFilter, tagFilter);
     } catch (err) {
       alert(err.response?.data?.error || 'Bulk update failed');
+    } finally {
+      setBulkSaving(false);
     }
   }
 
@@ -1036,12 +1054,13 @@ export default function Items() {
                 const kg = parseFloat(item.live_stock_kg) || 0;
                 const isActive = item.is_active !== false;
                 const isSelected = selectedIds.includes(item.id);
+                const isNew = item.id === newItemId;
 
                 const rowStyle = {
                   opacity: isActive ? 1 : 0.7,
-                  background: isSelected ? 'var(--primary-dim)' : undefined,
+                  background: isNew ? '#d1fae5' : isSelected ? 'var(--primary-dim)' : undefined,
                   cursor: 'default',
-                  transition: 'background 0.1s',
+                  transition: 'background 2s ease',
                 };
 
                 return (
@@ -1146,11 +1165,11 @@ export default function Items() {
             ))}
           </select>
           <button
-            style={{ ...s.bulkApplyBtn, opacity: !bulkLocation ? 0.5 : 1 }}
+            style={{ ...s.bulkApplyBtn, opacity: (!bulkLocation || bulkSaving) ? 0.5 : 1 }}
             onClick={handleBulkApplyLocation}
-            disabled={!bulkLocation}
+            disabled={!bulkLocation || bulkSaving}
           >
-            Apply
+            {bulkSaving ? 'Applying...' : 'Apply'}
           </button>
           <button style={s.bulkClearBtn} onClick={() => setSelectedIds([])}>
             Clear

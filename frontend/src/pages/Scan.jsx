@@ -195,6 +195,13 @@ export default function Scan() {
 
       pushFeed({ mode, kind: 'move', item: d.item, delta: mode === 'inward' ? d.added_qty : d.removed_qty, newStock: d.new_stock, badges, action: d.action });
       setUnknown(null); setLearnMsg(null);
+      // Auto-populate expiry from GS1 for the next scan
+      if (mode === 'inward' && ex.expiry && !expiry) {
+        const dt = new Date(ex.expiry);
+        if (!isNaN(dt.getTime())) {
+          setExpiry(dt.toISOString().slice(0, 10));
+        }
+      }
     } catch (err) {
       const r = err.response;
       if (r?.status === 404 && r.data?.error === 'UNKNOWN_BARCODE') {
