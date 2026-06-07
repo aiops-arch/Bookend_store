@@ -92,8 +92,10 @@ export default function MarginReport() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `margin-report-${from}-${to}.csv`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
   }
 
   const items = reportData?.items || [];

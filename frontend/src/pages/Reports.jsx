@@ -591,10 +591,12 @@ function ExportTab() {
       const a = document.createElement('a');
       a.href = url;
       const cd = res.headers['content-disposition'];
-      const fname = cd ? cd.split('filename=')[1] : `${type}-export.xlsx`;
+      const fname = (cd ? cd.split('filename=')[1] : `${type}-export.xlsx`).replace(/"/g, '');
       a.download = fname;
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 200);
     } catch (err) {
       alert('Export failed');
     }

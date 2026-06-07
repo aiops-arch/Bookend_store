@@ -113,8 +113,10 @@ function downloadCSV(batches, itemCode) {
   const a = document.createElement('a');
   a.href = url;
   a.download = `batches-${itemCode || 'export'}-${Date.now()}.csv`;
+  a.style.display = 'none';
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
 }
 
 export default function BatchViewer() {
