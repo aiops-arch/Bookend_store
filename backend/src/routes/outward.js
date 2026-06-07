@@ -36,7 +36,7 @@ async function fifoPick(itemId, qtyRequired, trx) {
 // GET /api/outward — list outward entries
 router.get('/', authenticate, async (req, res, next) => {
   try {
-    const { status, customer_id } = req.query;
+    const { status, customer_id, search } = req.query;
     let query = db('outward_entries')
       .select(
         'outward_entries.*',
@@ -49,9 +49,25 @@ router.get('/', authenticate, async (req, res, next) => {
 
     if (status) query = query.where('outward_entries.status', status);
     if (customer_id) query = query.where('outward_entries.customer_id', customer_id);
+    if (search) {
+      query = query.where(function () {
+        this.whereILike('outward_entries.challan_no', `%${search}%`)
+          .orWhereILike('customers.name', `%${search}%`);
+      });
+    }
 
-    const entries = await query;
-    res.json({ success: true, data: entries });
+    const page  = Math.max(1, parseInt(req.query.page  || '1',  10));
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit || '50', 10)));
+    const offset = (page - 1) * limit;
+
+    const countQuery = query.clone().clearSelect().clearOrder().count('outward_entries.id as total').first();
+    const [{ total }, entries] = await Promise.all([countQuery, query.limit(limit).offset(offset)]);
+
+    res.json({
+      success: true,
+      data: entries,
+      pagination: { page, limit, total: parseInt(total, 10), pages: Math.ceil(parseInt(total, 10) / limit) },
+    });
   } catch (err) {
     next(err);
   }

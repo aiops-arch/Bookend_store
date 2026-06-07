@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import Nav from '../components/Nav';
@@ -52,23 +52,41 @@ export default function Outward() {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ customer_id: '', dispatch_date: '' });
   const canWrite = ['admin', 'sales'].includes(user.role);
+  const debounceRef = useRef(null);
 
-  async function fetchEntries() {
+  async function fetchEntries(pg = 1, q = search, st = statusFilter) {
     setLoading(true);
     try {
-      const params = {};
-      if (statusFilter) params.status = statusFilter;
+      const params = { page: pg, limit: 50 };
+      if (st) params.status = st;
+      if (q) params.search = q;
       const res = await client.get('/outward', { params });
       setEntries(res.data.data || []);
+      setPagination(res.data.pagination || null);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }
 
   useEffect(() => { client.get('/customers').then(r => setCustomers(r.data.data || [])); }, []);
-  useEffect(() => { fetchEntries(); }, [statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+    fetchEntries(1, search, statusFilter);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchEntries(1, search, statusFilter), 300);
+    return () => clearTimeout(debounceRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   async function handleCreate() {
     if (!form.customer_id || !form.dispatch_date) return alert('Customer and Dispatch Date are required');
@@ -121,20 +139,10 @@ export default function Outward() {
             </thead>
             <tbody>
               {loading && <tr><td colSpan="6" style={S.empty}>Loading...</td></tr>}
-              {!loading && entries.filter(e => {
-                if (!search.trim()) return true;
-                const q = search.trim().toLowerCase();
-                return (e.customer_name || '').toLowerCase().includes(q)
-                  || (e.challan_no || '').toLowerCase().includes(q);
-              }).length === 0 && (
+              {!loading && entries.length === 0 && (
                 <tr><td colSpan="6" style={S.empty}>{search ? `No results for "${search}"` : 'No dispatches found'}</td></tr>
               )}
-              {!loading && entries.filter(e => {
-                if (!search.trim()) return true;
-                const q = search.trim().toLowerCase();
-                return (e.customer_name || '').toLowerCase().includes(q)
-                  || (e.challan_no || '').toLowerCase().includes(q);
-              }).map(e => (
+              {!loading && entries.map(e => (
                 <tr key={e.id}>
                   <td style={S.td}><span style={{ fontFamily: 'monospace', fontWeight: '600' }}>{e.challan_no || `OW-${String(e.id).padStart(4, '0')}`}</span></td>
                   <td style={S.td}>{e.customer_name}</td>
@@ -149,6 +157,26 @@ export default function Outward() {
             </tbody>
           </table>
         </div>
+
+        {pagination && pagination.pages > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', fontSize: '13px', color: 'var(--text-3)' }}>
+            <span>{((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}</span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button disabled={page <= 1} onClick={() => { setPage(p => p - 1); fetchEntries(page - 1); }}
+                style={{ padding: '5px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--surface)', cursor: page <= 1 ? 'default' : 'pointer', opacity: page <= 1 ? 0.4 : 1, fontSize: '13px' }}>Prev</button>
+              {Array.from({ length: pagination.pages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === pagination.pages || Math.abs(p - page) <= 1)
+                .reduce((acc, p, idx, arr) => { if (idx > 0 && p - arr[idx - 1] > 1) acc.push('…'); acc.push(p); return acc; }, [])
+                .map((p, i) => p === '…'
+                  ? <span key={`el-${i}`} style={{ padding: '0 4px' }}>…</span>
+                  : <button key={p} onClick={() => { setPage(p); fetchEntries(p); }}
+                      style={{ padding: '5px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: p === page ? 'var(--primary)' : 'var(--surface)', color: p === page ? '#fff' : 'var(--text-2)', cursor: 'pointer', fontSize: '13px', minWidth: '32px' }}>{p}</button>
+                )}
+              <button disabled={page >= pagination.pages} onClick={() => { setPage(p => p + 1); fetchEntries(page + 1); }}
+                style={{ padding: '5px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--surface)', cursor: page >= pagination.pages ? 'default' : 'pointer', opacity: page >= pagination.pages ? 0.4 : 1, fontSize: '13px' }}>Next</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {showForm && (

@@ -120,8 +120,19 @@ router.get('/', authenticate, async (req, res, next) => {
       );
     }
 
-    const items = await query;
-    res.json({ success: true, data: items });
+    const page  = Math.max(1, parseInt(req.query.page  || '1',  10));
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit || '60', 10)));
+    const offset = (page - 1) * limit;
+
+    const countQuery = query.clone().clearSelect().clearOrder().count('items.id as total').first();
+    const [{ total }, rows] = await Promise.all([countQuery, query.limit(limit).offset(offset)]);
+
+    const totalCount = parseInt(total, 10);
+    res.json({
+      success: true,
+      data: rows,
+      pagination: { page, limit, total: totalCount, pages: Math.ceil(totalCount / limit) },
+    });
   } catch (err) {
     next(err);
   }

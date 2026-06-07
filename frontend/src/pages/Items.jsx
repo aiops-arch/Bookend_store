@@ -730,6 +730,8 @@ export default function Items() {
   const [locationFilter, setLocationFilter] = useState('');
   const [tagFilter, setTagFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState('true'); // 'true' | 'false' | 'all'
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -748,10 +750,10 @@ export default function Items() {
     setShowTour(false);
   }
 
-  const fetchItems = useCallback(async (q, catId, actFilter, locId, tId) => {
+  const fetchItems = useCallback(async (q, catId, actFilter, locId, tId, pg = 1) => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { page: pg, limit: 60 };
       if (q) params.search = q;
       if (catId) params.category_id = catId;
       params.active = actFilter;
@@ -760,6 +762,7 @@ export default function Items() {
       const res = await client.get('/items', { params });
       const loaded = res.data.data || [];
       setItems(loaded);
+      setPagination(res.data.pagination || null);
       prewarmImages(loaded);
     } catch (err) {
       console.error('Failed to load items', err);
@@ -775,12 +778,18 @@ export default function Items() {
   }, []);
 
   useEffect(() => {
+    setPage(1);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      fetchItems(search, categoryFilter, activeFilter, locationFilter, tagFilter);
+      fetchItems(search, categoryFilter, activeFilter, locationFilter, tagFilter, 1);
     }, 300);
     return () => clearTimeout(debounceRef.current);
   }, [search, categoryFilter, activeFilter, locationFilter, tagFilter, fetchItems]);
+
+  useEffect(() => {
+    fetchItems(search, categoryFilter, activeFilter, locationFilter, tagFilter, page);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   function openAdd() {
     setEditingItem(null);
@@ -807,7 +816,8 @@ export default function Items() {
       setCategoryFilter('');
       setLocationFilter('');
       setTagFilter('');
-      await fetchItems('', '', 'true', '', '');
+      setPage(1);
+      await fetchItems('', '', 'true', '', '', 1);
       if (createdId) {
         setNewItemId(createdId);
         setTimeout(() => setNewItemId(null), 3000);
@@ -876,8 +886,8 @@ export default function Items() {
 
   const canWrite = ['admin', 'purchase'].includes(user.role);
 
-  // Metrics
-  const totalItems = items.length;
+  // Metrics — use pagination total when available (reflects full DB count, not just current page)
+  const totalItems = pagination ? pagination.total : items.length;
   const activeItems = items.filter(i => i.is_active !== false).length;
   const lowStockItems = items.filter(i => (parseFloat(i.live_stock_kg) || 0) === 0).length;
 
@@ -1157,6 +1167,45 @@ export default function Items() {
           </table>
         </div>
       </div>
+
+      {/* ── Pagination ── */}
+      {pagination && pagination.pages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 32px', fontSize: '13px', color: 'var(--text-3)' }}>
+          <span>
+            {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} items
+          </span>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(p => p - 1)}
+              style={{ padding: '5px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--surface)', cursor: page <= 1 ? 'default' : 'pointer', opacity: page <= 1 ? 0.4 : 1, fontSize: '13px' }}
+            >
+              Prev
+            </button>
+            {Array.from({ length: pagination.pages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === pagination.pages || Math.abs(p - page) <= 2)
+              .reduce((acc, p, idx, arr) => {
+                if (idx > 0 && p - arr[idx - 1] > 1) acc.push('…');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, i) => p === '…'
+                ? <span key={`ellipsis-${i}`} style={{ padding: '0 4px', color: 'var(--text-4)' }}>…</span>
+                : <button key={p} onClick={() => setPage(p)}
+                    style={{ padding: '5px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: p === page ? 'var(--primary)' : 'var(--surface)', color: p === page ? '#fff' : 'var(--text-2)', cursor: 'pointer', fontSize: '13px', fontWeight: p === page ? '700' : '400', minWidth: '32px' }}>
+                    {p}
+                  </button>
+              )}
+            <button
+              disabled={page >= pagination.pages}
+              onClick={() => setPage(p => p + 1)}
+              style={{ padding: '5px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--surface)', cursor: page >= pagination.pages ? 'default' : 'pointer', opacity: page >= pagination.pages ? 0.4 : 1, fontSize: '13px' }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Floating Bulk Bar ── */}
       {canWrite && selectedIds.length > 0 && (
