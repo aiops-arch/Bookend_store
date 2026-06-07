@@ -23,7 +23,7 @@ function validatePassword(pw) {
 // GET /api/users — list all users
 router.get('/', authenticate, authorize('admin'), async (req, res, next) => {
   try {
-    const users = await db('users').select(userFields).orderBy('id');
+    const users = await db('users').select(userFields).orderBy('id', 'desc');
     res.json({ success: true, data: users });
   } catch (err) {
     next(err);

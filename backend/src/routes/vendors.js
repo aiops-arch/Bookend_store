@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', authenticate, async (req, res, next) => {
   try {
     const { search } = req.query;
-    let query = db('vendors').orderBy('name');
+    let query = db('vendors').orderBy('id', 'desc');
     if (search) {
       query = query.where(function () {
         this.whereILike('name', `%${search}%`)
