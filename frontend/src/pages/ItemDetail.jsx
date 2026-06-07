@@ -738,11 +738,20 @@ function PhotosTab({ itemId, item, user, fetchItem }) {
   const canManage = ['admin', 'purchase'].includes(user.role);
   const icon = getItemIcon(item);
 
+  function normalizeImageUrl(val) {
+    const gd = val.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (gd) return `https://drive.google.com/uc?export=view&id=${gd[1]}`;
+    const gd2 = val.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    if (gd2) return `https://drive.google.com/uc?export=view&id=${gd2[1]}`;
+    return val;
+  }
+
   function handleCoverInput(val) {
-    setCoverUrl(val);
+    const normalized = normalizeImageUrl(val.trim());
+    setCoverUrl(normalized);
     setPreviewErr(false);
-    setPreviewUrl(val);
-    setCoverMsg({ type: '', text: '' });
+    setPreviewUrl(normalized);
+    setCoverMsg(normalized !== val.trim() ? { type: 'success', text: 'Google Drive link auto-converted to direct image URL.' } : { type: '', text: '' });
   }
 
   async function saveCoverUrl() {
