@@ -1090,14 +1090,24 @@ export default function Items() {
                       </button>
                     </td>
                     <td style={s.td}>
-                      <div style={{ fontWeight: '500', color: 'var(--text-1)', fontSize: '13px' }}>
-                        {item.variant_grade || item.source_name || item.sub_category_name || '—'}
-                      </div>
-                      {item.barcode && (
-                        <div style={{ fontSize: '11px', color: 'var(--text-4)', marginTop: '2px', fontFamily: 'ui-monospace, monospace' }}>
-                          {item.barcode}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {(() => {
+                          const src = item.item_image_url || item.first_photo_url;
+                          return src
+                            ? <img src={src} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0, border: '1px solid var(--border)' }} />
+                            : <div style={{ width: '36px', height: '36px', borderRadius: '6px', flexShrink: 0, background: 'var(--surface-2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: 'var(--text-4)' }}>📦</div>;
+                        })()}
+                        <div>
+                          <div style={{ fontWeight: '500', color: 'var(--text-1)', fontSize: '13px' }}>
+                            {item.variant_grade || item.source_name || item.sub_category_name || '—'}
+                          </div>
+                          {item.barcode && (
+                            <div style={{ fontSize: '11px', color: 'var(--text-4)', marginTop: '2px', fontFamily: 'ui-monospace, monospace' }}>
+                              {item.barcode}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </td>
                     <td style={{ ...s.td, color: 'var(--text-3)' }}>
                       {item.sub_category_name || '—'}

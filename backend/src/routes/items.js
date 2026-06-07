@@ -75,6 +75,9 @@ router.get('/', authenticate, async (req, res, next) => {
         ),
         db.raw(
           '(SELECT il.source_name FROM inward_lines il WHERE il.item_id = items.id AND il.source_name IS NOT NULL ORDER BY il.id DESC LIMIT 1) as source_name'
+        ),
+        db.raw(
+          '(SELECT ip.storage_url FROM item_photos ip WHERE ip.item_id = items.id ORDER BY ip.sort_order, ip.id LIMIT 1) as first_photo_url'
         )
       )
       .join('sub_categories', 'sub_categories.id', 'items.sub_category_id')
