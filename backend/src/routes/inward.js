@@ -11,23 +11,73 @@ const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
-// GET /api/inward — list inward entries
+// GET /api/inward/stats — KPI summary cards (total amount, outstanding, tax)
+// MUST be before /:id so Express doesn't treat "stats" as an ID
+router.get('/stats', authenticate, async (req, res, next) => {
+  try {
+    const { date_from, date_to, vendor_id, status } = req.query;
+    let base = db('inward_entries')
+      .leftJoin('inward_lines', 'inward_lines.inward_id', 'inward_entries.id')
+      .leftJoin('items', 'items.id', 'inward_lines.item_id');
+
+    if (date_from) base = base.where('inward_entries.invoice_date', '>=', date_from);
+    if (date_to)   base = base.where('inward_entries.invoice_date', '<=', date_to);
+    if (vendor_id) base = base.where('inward_entries.vendor_id', vendor_id);
+    if (status)    base = base.where('inward_entries.status', status);
+
+    const row = await base.select(
+      db.raw('COALESCE(SUM(inward_lines.qty * inward_lines.rate), 0) AS total_amount'),
+      db.raw(`COALESCE(SUM(
+        inward_lines.qty * inward_lines.rate * COALESCE(items.gst_rate, 0) / 100
+      ), 0) AS gst_amount`)
+    ).first();
+
+    res.json({
+      success: true,
+      data: {
+        total_amount: parseFloat(row.total_amount || 0),
+        outstanding:  parseFloat(row.total_amount || 0), // no payments table yet
+        gst_amount:   parseFloat(row.gst_amount   || 0),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/inward — list inward entries with totals and PO reference
 router.get('/', authenticate, async (req, res, next) => {
   try {
-    const { status, vendor_id, search } = req.query;
+    const { status, vendor_id, search, date_from, date_to } = req.query;
     let query = db('inward_entries')
       .select(
         'inward_entries.*',
         'vendors.name as vendor_name',
         'users.name as created_by_name',
-        db.raw('(SELECT COUNT(*) FROM inward_lines WHERE inward_lines.inward_id = inward_entries.id) as line_count')
+        db.raw('(SELECT COUNT(*) FROM inward_lines WHERE inward_lines.inward_id = inward_entries.id) as line_count'),
+        db.raw(`(
+          SELECT COALESCE(SUM(il.qty * il.rate), 0)
+          FROM inward_lines il WHERE il.inward_id = inward_entries.id
+        ) as total_amount`),
+        db.raw(`(
+          SELECT COALESCE(SUM(il.qty * il.rate * COALESCE(i.gst_rate, 0) / 100), 0)
+          FROM inward_lines il
+          LEFT JOIN items i ON i.id = il.item_id
+          WHERE il.inward_id = inward_entries.id
+        ) as gst_amount`),
+        db.raw(`CASE WHEN inward_entries.po_id IS NOT NULL
+          THEN 'PO-' || LPAD(inward_entries.po_id::text, 4, '0')
+          ELSE NULL END as po_reference`)
       )
       .join('vendors', 'vendors.id', 'inward_entries.vendor_id')
       .join('users', 'users.id', 'inward_entries.created_by')
+      .orderBy('inward_entries.invoice_date', 'desc')
       .orderBy('inward_entries.id', 'desc');
 
-    if (status) query = query.where('inward_entries.status', status);
+    if (status)    query = query.where('inward_entries.status', status);
     if (vendor_id) query = query.where('inward_entries.vendor_id', vendor_id);
+    if (date_from) query = query.where('inward_entries.invoice_date', '>=', date_from);
+    if (date_to)   query = query.where('inward_entries.invoice_date', '<=', date_to);
     if (search) {
       query = query.where(function () {
         this.whereILike('inward_entries.invoice_no', `%${search}%`)
@@ -678,70 +728,4 @@ router.post('/:id/confirm', authenticate, authorize('admin', 'purchase', 'wareho
     if (lines.length === 0) { await trx.rollback(); return res.status(409).json({ success: false, error: 'No lines exist on this entry' }); }
 
     const today = new Date().toISOString().split('T')[0];
-    const receiptDate = entry.invoice_date ? String(entry.invoice_date).slice(0, 10) : today;
-
-    for (const line of lines) {
-      const [batch] = await trx('batches')
-        .insert({
-          item_id: line.item_id,
-          receipt_date: receiptDate,
-          expiry_date: line.expiry_date || null,
-          qty_received: line.qty,
-          qty_remaining: line.qty
-        })
-        .returning('*');
-
-      await trx('inward_lines').where({ id: line.id }).update({ batch_id: batch.id });
-
-      await logAudit({
-        table_name: 'batches', record_id: batch.id, action: 'INSERT',
-        user_id: req.user.id, new_value: batch
-      }, trx);
-    }
-
-    if (entry.po_id) {
-      await trx('purchase_orders').where({ id: entry.po_id }).update({ status: 'received' });
-    }
-
-    const [updated] = await trx('inward_entries')
-      .where({ id: req.params.id })
-      .update({ status: 'confirmed' })
-      .returning('*');
-
-    await logAudit({
-      table_name: 'inward_entries', record_id: entry.id, action: 'UPDATE',
-      user_id: req.user.id, old_value: { status: 'draft' }, new_value: { status: 'confirmed' }
-    }, trx);
-
-    await trx.commit();
-    res.json({ success: true, data: updated });
-  } catch (err) {
-    await trx.rollback();
-    next(err);
-  }
-});
-
-// POST /api/inward/:id/lock — lock confirmed entry
-router.post('/:id/lock', authenticate, authorize('admin', 'purchase', 'warehouse'), async (req, res, next) => {
-  try {
-    const entry = await db('inward_entries').where({ id: req.params.id }).first();
-    if (!entry) return res.status(404).json({ success: false, error: 'Inward entry not found' });
-    if (entry.status !== 'confirmed') return res.status(409).json({ success: false, error: 'Entry must be confirmed before locking' });
-
-    const [updated] = await db('inward_entries')
-      .where({ id: req.params.id })
-      .update({ status: 'locked', locked_at: new Date() })
-      .returning('*');
-
-    await logAudit({
-      table_name: 'inward_entries', record_id: entry.id, action: 'LOCK',
-      user_id: req.user.id, old_value: { status: 'confirmed' }, new_value: { status: 'locked' }
-    });
-
-    res.json({ success: true, data: updated });
-  } catch (err) {
-    next(err);
-  }
-});
-
-module.exports = router;
+    const receiptDate

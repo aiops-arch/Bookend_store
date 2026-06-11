@@ -3,6 +3,12 @@
 
 ---
 
+> 🤖 **AGENT: Read `PROGRESS.md` FIRST before doing any work.**
+> It contains current build status, known issues, changelog, and key file locations.
+> Update it after every session. Do not re-audit the whole codebase if PROGRESS.md is up to date.
+
+---
+
 ## Project goal
 Build a web-based inventory management system for a food & grains business.
 Handles: barcode scan inward/outward, FIFO batch tracking, expiry alerts, role-based access, Excel import/export, audit trail, and an intelligence layer for risk scoring and margin tracking.
@@ -324,7 +330,4 @@ function itemPnL(item) {
 ## Start here — Phase 1 first task
 Build in this order:
 1. `POST /api/auth/login` → JWT response with role
-2. Role middleware (guard all routes by role)
-3. Category + SubCategory + Item CRUD with auto item_code and EAN-13 barcode generation
-4. `GET /api/items/scan/:barcode` → returns item + live stock
-5. Basic React app with login screen + Item Master page + barcode scan input field
+2. Role middleware (guard 

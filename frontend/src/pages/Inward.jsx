@@ -4,95 +4,300 @@ import client from '../api/client';
 import Nav from '../components/Nav';
 import { safeUser } from '../lib/safeUser';
 
-const S = {
-  page: { minHeight: '100vh', background: 'var(--bg)' },
-  content: { padding: '24px 28px', maxWidth: '1200px', margin: '0 auto' },
-  topRow: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' },
-  title: { margin: 0, fontSize: '20px', fontWeight: '700', color: 'var(--text-1)' },
-  addBtn: { padding: '8px 16px', borderRadius: 'var(--radius)', border: 'none', background: 'var(--primary)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '600' },
-  filterBar: { display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center' },
-  select: { padding: '7px 12px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: '13px', background: 'var(--surface)', color: 'var(--text-2)' },
-  tableWrap: { background: 'var(--surface)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border)', overflow: 'auto' },
-  table: { width: '100%', borderCollapse: 'collapse', fontSize: '13px' },
-  th: { background: 'var(--surface-2)', padding: '10px 14px', textAlign: 'left', fontWeight: '600', fontSize: '11px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' },
-  td: { padding: '12px 14px', borderBottom: '1px solid var(--border)', color: 'var(--text-2)', verticalAlign: 'middle' },
-  viewBtn: { padding: '4px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--border-strong)', cursor: 'pointer', fontSize: '12px', background: 'var(--surface)', color: 'var(--primary)' },
-  empty: { padding: '48px', textAlign: 'center', color: 'var(--text-4)' },
-  overlay: { position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 },
-  modal: { background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '28px 32px', width: '460px', boxShadow: 'var(--shadow-lg)' },
-  modalTitle: { margin: '0 0 20px', fontSize: '16px', fontWeight: '700', color: 'var(--text-1)' },
-  formGroup: { marginBottom: '14px' },
-  label: { display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--text-2)', marginBottom: '5px' },
-  input: { width: '100%', padding: '8px 12px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: '13px', color: 'var(--text-1)', background: 'var(--surface)', boxSizing: 'border-box' },
-  btnRow: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' },
-  saveBtn: { padding: '8px 16px', borderRadius: 'var(--radius)', border: 'none', background: 'var(--primary)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '600' },
-  cancelBtn: { padding: '8px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-strong)', background: 'var(--surface)', color: 'var(--text-2)', cursor: 'pointer', fontSize: '13px' }
+/* ── Inline SVG icons ───────────────────────────────────────────── */
+const Icon = {
+  Plus: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+  ),
+  Scan: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
+      <line x1="7" y1="12" x2="7" y2="12.01" strokeWidth="3"/>
+      <line x1="12" y1="9" x2="12" y2="15" strokeWidth="2"/>
+      <line x1="17" y1="12" x2="17" y2="12.01" strokeWidth="3"/>
+    </svg>
+  ),
+  Download: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7,10 12,15 17,10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+  ),
+  ChevronDown: () => (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <polyline points="6,9 12,15 18,9"/>
+    </svg>
+  ),
+  Calendar: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="4" width="18" height="18" rx="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  ),
+  Edit: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  ),
+  MoreVert: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="12" cy="5" r="1.5"/>
+      <circle cx="12" cy="12" r="1.5"/>
+      <circle cx="12" cy="19" r="1.5"/>
+    </svg>
+  ),
+  Info: () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="8.01" strokeWidth="3"/>
+      <line x1="12" y1="12" x2="12" y2="16"/>
+    </svg>
+  ),
 };
 
-const statusStyle = {
-  draft:     { background: 'rgba(100,116,139,0.1)', color: 'var(--text-3)' },
-  confirmed: { background: 'var(--primary-dim)',    color: 'var(--primary)' },
-  locked:    { background: 'var(--success-dim)',    color: 'var(--success)' },
+/* ── Status config — mirrors PetPooja style ─────────────────────── */
+const STATUS_CFG = {
+  draft:     { label: 'Draft',     color: '#6b7280', bg: '#f3f4f6' },
+  confirmed: { label: 'Confirmed', color: '#7c3aed', bg: '#ede9fe' },
+  locked:    { label: 'Saved',     color: '#059669', bg: '#ecfdf5' },
+  cancelled: { label: 'Cancelled', color: '#dc2626', bg: '#fef2f2' },
 };
 
 function StatusBadge({ status }) {
-  const base = { padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' };
+  const cfg = STATUS_CFG[status] || { label: status, color: '#6b7280', bg: '#f3f4f6' };
   return (
-    <span style={{ ...base, ...(statusStyle[status] || statusStyle.draft) }}>
-      {status}
+    <span style={{
+      fontSize: '11.5px', fontWeight: '600',
+      color: cfg.color, background: cfg.bg,
+      padding: '3px 9px', borderRadius: '4px',
+      display: 'inline-block', whiteSpace: 'nowrap',
+    }}>
+      {cfg.label}
     </span>
   );
 }
 
+/* ── KPI summary card ───────────────────────────────────────────── */
+function KpiCard({ label, value, loading }) {
+  return (
+    <div style={{
+      flex: 1, minWidth: 0,
+      background: '#fff',
+      border: '1px solid #e5e7eb',
+      borderRadius: '8px',
+      padding: '16px 20px',
+    }}>
+      <p style={{
+        margin: '0 0 10px', fontSize: '12px', color: '#6b7280',
+        display: 'flex', alignItems: 'center', gap: '6px',
+      }}>
+        <span style={{
+          width: '7px', height: '7px', borderRadius: '50%',
+          background: '#94a3b8', flexShrink: 0, display: 'inline-block',
+        }}/>
+        {label}
+        <span style={{ color: '#cbd5e1', marginLeft: '2px', display: 'flex', alignItems: 'center' }}>
+          <Icon.Info />
+        </span>
+      </p>
+      <p style={{
+        margin: 0, fontSize: '22px', fontWeight: '700',
+        color: '#111827', letterSpacing: '-0.5px',
+      }}>
+        {loading ? <span style={{ color: '#d1d5db' }}>—</span> : value}
+      </p>
+    </div>
+  );
+}
+
+/* ── helpers ────────────────────────────────────────────────────── */
+function fmtINR(val) {
+  if (val == null || val === '' || isNaN(Number(val))) return '—';
+  return '₹ ' + Number(val).toLocaleString('en-IN', {
+    minimumFractionDigits: 3, maximumFractionDigits: 3,
+  });
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return String(d);
+  return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+/* ── pagination button ──────────────────────────────────────────── */
+function PagBtn({ children, onClick, disabled, active }) {
+  return (
+    <button disabled={disabled} onClick={onClick} style={{
+      padding: '5px 10px', minWidth: '34px',
+      borderRadius: '6px', border: '1px solid #e5e7eb',
+      background: active ? '#00b140' : '#fff',
+      color: active ? '#fff' : '#374151',
+      fontWeight: active ? '600' : '400',
+      cursor: disabled ? 'default' : 'pointer',
+      opacity: disabled ? 0.4 : 1,
+      fontSize: '13px',
+    }}>
+      {children}
+    </button>
+  );
+}
+
+/* ── action icon button ─────────────────────────────────────────── */
+function ActionBtn({ children, onClick, color, title }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button title={title} onClick={onClick}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        width: '28px', height: '28px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        border: `1px solid ${hov ? '#d1d5db' : '#e5e7eb'}`,
+        borderRadius: '5px',
+        background: hov ? '#f9fafb' : '#fff',
+        cursor: 'pointer', color: color || '#6b7280',
+      }}>
+      {children}
+    </button>
+  );
+}
+
+/* ── table row ──────────────────────────────────────────────────── */
+function TableRow({ entry: e, idx, onView }) {
+  const [hov, setHov] = useState(false);
+  const base = idx % 2 === 0 ? '#fff' : '#fafafa';
+  return (
+    <tr
+      style={{ borderBottom: '1px solid #f3f4f6', background: hov ? '#f0fdf4' : base }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      <td style={{ padding: '11px 14px', fontWeight: '500', color: '#111827', whiteSpace: 'nowrap' }}>
+        {e.vendor_name || '—'}
+      </td>
+      <td style={{ padding: '11px 14px', color: '#374151', whiteSpace: 'nowrap' }}>
+        {fmtDate(e.invoice_date)}
+      </td>
+      <td style={{ padding: '11px 14px', color: '#374151', fontFamily: 'monospace', fontSize: '12px' }}>
+        {e.invoice_no || '—'}
+      </td>
+      <td style={{ padding: '11px 14px', color: '#374151' }}>
+        {e.po_reference || '—'}
+      </td>
+      <td style={{ padding: '11px 14px', color: '#111827', fontWeight: '600', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+        {e.total_amount != null && Number(e.total_amount) > 0
+          ? Number(e.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 3 })
+          : '—'}
+      </td>
+      <td style={{ padding: '11px 14px', color: '#374151', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+        {e.gst_amount != null && Number(e.gst_amount) > 0
+          ? Number(e.gst_amount).toLocaleString('en-IN', { minimumFractionDigits: 3 })
+          : '0.000'}
+      </td>
+      <td style={{ padding: '11px 14px', color: '#374151', whiteSpace: 'nowrap' }}>
+        {e.created_by_name || '—'}
+      </td>
+      <td style={{ padding: '11px 14px' }}>
+        <StatusBadge status={e.status} />
+      </td>
+      <td style={{ padding: '11px 14px' }}>
+        <div style={{ display: 'flex', gap: '5px' }}>
+          <ActionBtn title="View / Edit" color="#6b7280" onClick={onView}>
+            <Icon.Edit />
+          </ActionBtn>
+          <ActionBtn title="More options" color="#6b7280">
+            <Icon.MoreVert />
+          </ActionBtn>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+/* ── MAIN COMPONENT ─────────────────────────────────────────────── */
 export default function Inward() {
   const navigate = useNavigate();
-  const user = safeUser();
-  const [entries, setEntries] = useState([]);
-  const [vendors, setVendors] = useState([]);
-  const [openPos, setOpenPos] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ po_id: '', vendor_id: '', invoice_no: '', invoice_date: '' });
-  const canWrite = ['admin', 'purchase', 'warehouse'].includes(user.role);
-  const debounceRef = useRef(null);
+  const user     = safeUser();
 
-  async function fetchEntries(pg = 1, q = search, st = statusFilter) {
+  const [entries,      setEntries]      = useState([]);
+  const [loading,      setLoading]      = useState(false);
+  const [page,         setPage]         = useState(1);
+  const [pagination,   setPagination]   = useState(null);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [vendorFilter, setVendorFilter] = useState('');
+  const [invoiceSearch,setInvoiceSearch]= useState('');
+  const [dateFrom,     setDateFrom]     = useState('');
+  const [dateTo,       setDateTo]       = useState('');
+  const [stats,        setStats]        = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [vendors,      setVendors]      = useState([]);
+  const [openPos,      setOpenPos]      = useState([]);
+  const [showForm,     setShowForm]     = useState(false);
+  const [exportOpen,   setExportOpen]   = useState(false);
+  const [form, setForm] = useState({ po_id: '', vendor_id: '', invoice_no: '', invoice_date: '' });
+
+  const canWrite  = ['admin', 'purchase', 'warehouse'].includes(user?.role);
+  const debRef    = useRef(null);
+  const exportRef = useRef(null);
+
+  function buildParams() {
+    const p = {};
+    if (statusFilter)  p.status    = statusFilter;
+    if (vendorFilter)  p.vendor_id = vendorFilter;
+    if (invoiceSearch) p.search    = invoiceSearch;
+    if (dateFrom)      p.date_from = dateFrom;
+    if (dateTo)        p.date_to   = dateTo;
+    return p;
+  }
+
+  async function fetchEntries(pg = 1) {
     setLoading(true);
     try {
-      const params = { page: pg, limit: 50 };
-      if (st) params.status = st;
-      if (q) params.search = q;
-      const res = await client.get('/inward', { params });
+      const res = await client.get('/inward', { params: { ...buildParams(), page: pg, limit: 50 } });
       setEntries(res.data.data || []);
       setPagination(res.data.pagination || null);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }
 
+  async function fetchStats() {
+    setStatsLoading(true);
+    try {
+      const res = await client.get('/inward/stats', { params: buildParams() });
+      setStats(res.data.data);
+    } catch (err) { console.error('Stats fetch failed:', err); setStats(null); }
+    finally { setStatsLoading(false); }
+  }
+
+  // Load vendors & open POs once
   useEffect(() => {
-    const controller = new AbortController();
-    client.get('/vendors', { signal: controller.signal }).then(r => setVendors(r.data.data || [])).catch(() => {});
-    client.get('/purchase-orders', { params: { status: 'open' }, signal: controller.signal }).then(r => setOpenPos(r.data.data || [])).catch(() => {});
-    return () => controller.abort();
+    const ctrl = new AbortController();
+    client.get('/vendors', { signal: ctrl.signal }).then(r => setVendors(r.data.data || [])).catch(() => {});
+    client.get('/purchase-orders', { params: { status: 'open' }, signal: ctrl.signal }).then(r => setOpenPos(r.data.data || [])).catch(() => {});
+    return () => ctrl.abort();
   }, []);
 
+  // Debounced re-fetch on filter change
   useEffect(() => {
     setPage(1);
-    fetchEntries(1, search, statusFilter);
+    clearTimeout(debRef.current);
+    debRef.current = setTimeout(() => { fetchEntries(1); fetchStats(); }, 300);
+    return () => clearTimeout(debRef.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
+  }, [statusFilter, vendorFilter, invoiceSearch, dateFrom, dateTo]);
 
+  // Close export dropdown on outside click
   useEffect(() => {
-    setPage(1);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchEntries(1, search, statusFilter), 300);
-    return () => clearTimeout(debounceRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+    function h(e) { if (exportRef.current && !exportRef.current.contains(e.target)) setExportOpen(false); }
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
 
   async function handleCreate() {
     if (!form.vendor_id) return alert('Vendor is required');
@@ -106,124 +311,6 @@ export default function Inward() {
     } catch (err) { alert(err.response?.data?.error || 'Create failed'); }
   }
 
-  return (
-    <div style={S.page}>
-      <Nav />
-      <div style={S.content}>
-        <div style={S.topRow}>
-          <h2 style={S.title}>Inward Entries</h2>
-          {canWrite && <button style={S.addBtn} onClick={() => setShowForm(true)}>+ New Inward</button>}
-        </div>
-        <div style={S.filterBar}>
-          <select style={S.select} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            <option value="">All Statuses</option>
-            <option value="draft">Draft</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="locked">Locked</option>
-          </select>
-          <input
-            style={{ ...S.select, minWidth: '220px' }}
-            placeholder="Search vendor or invoice #..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          {search && (
-            <button style={{ ...S.addBtn, background: 'var(--text-3)', fontSize: '12px', padding: '6px 12px' }} onClick={() => setSearch('')}>
-              Clear
-            </button>
-          )}
-        </div>
-        <div style={S.tableWrap}>
-          <table style={S.table}>
-            <thead>
-              <tr>
-                <th style={S.th}>ID</th>
-                <th style={S.th}>Vendor</th>
-                <th style={S.th}>Invoice #</th>
-                <th style={S.th}>Invoice Date</th>
-                <th style={S.th}>Lines</th>
-                <th style={S.th}>Status</th>
-                <th style={S.th}>Created By</th>
-                <th style={S.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && <tr><td colSpan="8" style={S.empty}>Loading...</td></tr>}
-              {!loading && entries.length === 0 && (
-                <tr><td colSpan="8" style={S.empty}>{search ? `No results for "${search}"` : 'No inward entries found'}</td></tr>
-              )}
-              {!loading && entries.map(e => (
-                <tr key={e.id}>
-                  <td style={S.td}><span style={{ fontFamily: 'monospace', fontWeight: '600' }}>IN-{String(e.id).padStart(4, '0')}</span></td>
-                  <td style={S.td}>{e.vendor_name}</td>
-                  <td style={S.td}>{e.invoice_no || '—'}</td>
-                  <td style={S.td}>{e.invoice_date || '—'}</td>
-                  <td style={S.td}>{e.line_count}</td>
-                  <td style={S.td}><StatusBadge status={e.status} /></td>
-                  <td style={S.td}>{e.created_by_name}</td>
-                  <td style={S.td}>
-                    <button style={S.viewBtn} onClick={() => navigate(`/inward/${e.id}`)}>View</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {pagination && pagination.pages > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', fontSize: '13px', color: 'var(--text-3)' }}>
-            <span>{((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}</span>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button disabled={page <= 1} onClick={() => { setPage(p => p - 1); fetchEntries(page - 1); }}
-                style={{ padding: '5px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--surface)', cursor: page <= 1 ? 'default' : 'pointer', opacity: page <= 1 ? 0.4 : 1, fontSize: '13px' }}>Prev</button>
-              {Array.from({ length: pagination.pages }, (_, i) => i + 1)
-                .filter(p => p === 1 || p === pagination.pages || Math.abs(p - page) <= 1)
-                .reduce((acc, p, idx, arr) => { if (idx > 0 && p - arr[idx - 1] > 1) acc.push('…'); acc.push(p); return acc; }, [])
-                .map((p, i) => p === '…'
-                  ? <span key={`el-${i}`} style={{ padding: '0 4px' }}>…</span>
-                  : <button key={p} onClick={() => { setPage(p); fetchEntries(p); }}
-                      style={{ padding: '5px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: p === page ? 'var(--primary)' : 'var(--surface)', color: p === page ? '#fff' : 'var(--text-2)', cursor: 'pointer', fontSize: '13px', minWidth: '32px' }}>{p}</button>
-                )}
-              <button disabled={page >= pagination.pages} onClick={() => { setPage(p => p + 1); fetchEntries(page + 1); }}
-                style={{ padding: '5px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--surface)', cursor: page >= pagination.pages ? 'default' : 'pointer', opacity: page >= pagination.pages ? 0.4 : 1, fontSize: '13px' }}>Next</button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {showForm && (
-        <div style={S.overlay}>
-          <div style={S.modal}>
-            <h3 style={S.modalTitle}>New Inward Entry</h3>
-            <div style={S.formGroup}>
-              <label style={S.label}>Vendor *</label>
-              <select style={S.input} value={form.vendor_id} onChange={e => setForm(f => ({ ...f, vendor_id: e.target.value }))}>
-                <option value="">Select vendor...</option>
-                {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select>
-            </div>
-            <div style={S.formGroup}>
-              <label style={S.label}>Linked PO (optional)</label>
-              <select style={S.input} value={form.po_id} onChange={e => setForm(f => ({ ...f, po_id: e.target.value }))}>
-                <option value="">None</option>
-                {openPos.map(po => <option key={po.id} value={po.id}>PO-{String(po.id).padStart(4, '0')} — {po.vendor_name}</option>)}
-              </select>
-            </div>
-            <div style={S.formGroup}>
-              <label style={S.label}>Invoice #</label>
-              <input style={S.input} value={form.invoice_no} onChange={e => setForm(f => ({ ...f, invoice_no: e.target.value }))} />
-            </div>
-            <div style={S.formGroup}>
-              <label style={S.label}>Invoice Date</label>
-              <input type="date" style={S.input} value={form.invoice_date} onChange={e => setForm(f => ({ ...f, invoice_date: e.target.value }))} />
-            </div>
-            <div style={S.btnRow}>
-              <button style={S.cancelBtn} onClick={() => setShowForm(false)}>Cancel</button>
-              <button style={S.saveBtn} onClick={handleCreate}>Create</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+  function handleClear() {
+    setDateFrom(''); setDateTo(''); setVendorFilter('');
+    setInvoiceSearch
