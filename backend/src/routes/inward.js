@@ -728,4 +728,70 @@ router.post('/:id/confirm', authenticate, authorize('admin', 'purchase', 'wareho
     if (lines.length === 0) { await trx.rollback(); return res.status(409).json({ success: false, error: 'No lines exist on this entry' }); }
 
     const today = new Date().toISOString().split('T')[0];
-    const receiptDate
+    const receiptDate = entry.invoice_date ? String(entry.invoice_date).slice(0, 10) : today;
+
+    for (const line of lines) {
+      const [batch] = await trx('batches')
+        .insert({
+          item_id: line.item_id,
+          receipt_date: receiptDate,
+          expiry_date: line.expiry_date || null,
+          qty_received: line.qty,
+          qty_remaining: line.qty
+        })
+        .returning('*');
+
+      await trx('inward_lines').where({ id: line.id }).update({ batch_id: batch.id });
+
+      await logAudit({
+        table_name: 'batches', record_id: batch.id, action: 'INSERT',
+        user_id: req.user.id, new_value: batch
+      }, trx);
+    }
+
+    if (entry.po_id) {
+      await trx('purchase_orders').where({ id: entry.po_id }).update({ status: 'received' });
+    }
+
+    const [updated] = await trx('inward_entries')
+      .where({ id: req.params.id })
+      .update({ status: 'confirmed' })
+      .returning('*');
+
+    await logAudit({
+      table_name: 'inward_entries', record_id: entry.id, action: 'UPDATE',
+      user_id: req.user.id, old_value: { status: 'draft' }, new_value: { status: 'confirmed' }
+    }, trx);
+
+    await trx.commit();
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    await trx.rollback();
+    next(err);
+  }
+});
+
+// POST /api/inward/:id/lock — lock confirmed entry
+router.post('/:id/lock', authenticate, authorize('admin', 'purchase', 'warehouse'), async (req, res, next) => {
+  try {
+    const entry = await db('inward_entries').where({ id: req.params.id }).first();
+    if (!entry) return res.status(404).json({ success: false, error: 'Inward entry not found' });
+    if (entry.status !== 'confirmed') return res.status(409).json({ success: false, error: 'Entry must be confirmed before locking' });
+
+    const [updated] = await db('inward_entries')
+      .where({ id: req.params.id })
+      .update({ status: 'locked', locked_at: new Date() })
+      .returning('*');
+
+    await logAudit({
+      table_name: 'inward_entries', record_id: entry.id, action: 'LOCK',
+      user_id: req.user.id, old_value: { status: 'confirmed' }, new_value: { status: 'locked' }
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+module.exports = router;
