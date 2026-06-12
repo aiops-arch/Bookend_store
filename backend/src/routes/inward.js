@@ -4,6 +4,19 @@ const XLSX = require('xlsx');
 const db = require('../config/db');
 const { authenticate, authorize } = require('../middleware/auth');
 const { logAudit } = require('../services/audit');
+// ---- Startup migrations for GST columns and extra_charges ----
+;(async () => {
+  try {
+    await db.raw('ALTER TABLE inward_lines ADD COLUMN IF NOT EXISTS cgst_pct NUMERIC(5,2) DEFAULT 0');
+    await db.raw('ALTER TABLE inward_lines ADD COLUMN IF NOT EXISTS sgst_pct NUMERIC(5,2) DEFAULT 0');
+    await db.raw('ALTER TABLE inward_lines ADD COLUMN IF NOT EXISTS igst_pct NUMERIC(5,2) DEFAULT 0');
+    await db.raw("ALTER TABLE inward_entries ADD COLUMN IF NOT EXISTS extra_charges JSONB DEFAULT '{}'");
+  } catch (e) {
+    console.error('[inward] migration error:', e.message);
+  }
+})();
+
+
 const { generateEAN13 } = require('../services/barcode');
 const { normalize, TAXONOMY } = require('../services/normalize');
 
@@ -657,14 +670,15 @@ router.post('/:id/lines', authenticate, authorize('admin', 'purchase', 'warehous
     if (!entry) return res.status(404).json({ success: false, error: 'Inward entry not found' });
     if (entry.status !== 'draft') return res.status(409).json({ success: false, error: 'Can only add lines to draft entries' });
 
-    const { item_id, qty, rate, expiry_date } = req.body;
+    const { item_id, qty, rate, expiry_date, cgst_pct = 0, sgst_pct = 0, igst_pct = 0 } = req.body;
     if (!item_id || !qty || !rate) return res.status(400).json({ success: false, error: 'item_id, qty and rate are required' });
 
     const item = await db('items').where({ id: item_id }).first();
     if (!item) return res.status(400).json({ success: false, error: 'Item not found' });
 
     const [line] = await db('inward_lines')
-      .insert({ inward_id: parseInt(req.params.id), item_id, qty, rate, expiry_date: expiry_date || null })
+      .insert({ inward_id: parseInt(req.params.id), item_id, qty, rate, expiry_date: expiry_date || null,
+        cgst_pct: parseFloat(cgst_pct) || 0, sgst_pct: parseFloat(sgst_pct) || 0, igst_pct: parseFloat(igst_pct) || 0 })
       .returning('*');
 
     res.status(201).json({ success: true, data: line });
@@ -787,6 +801,25 @@ router.post('/:id/lock', authenticate, authorize('admin', 'purchase', 'warehouse
       table_name: 'inward_entries', record_id: entry.id, action: 'LOCK',
       user_id: req.user.id, old_value: { status: 'confirmed' }, new_value: { status: 'locked' }
     });
+
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/inward/:id/extra-charges — save packaging/courier/other charges on draft entry
+router.put('/:id/extra-charges', authenticate, authorize('admin', 'purchase', 'warehouse'), async (req, res, next) => {
+  try {
+    const entry = await db('inward_entries').where({ id: req.params.id }).first();
+    if (!entry) return res.status(404).json({ success: false, error: 'Inward entry not found' });
+    if (entry.status !== 'draft') return res.status(409).json({ success: false, error: 'Can only update charges on draft entries' });
+
+    const { extra_charges } = req.body; // { packaging: {amount,cgst,sgst}, courier: {...}, other: [{name,amount,cgst,sgst}] }
+    const [updated] = await db('inward_entries')
+      .where({ id: req.params.id })
+      .update({ extra_charges: JSON.stringify(extra_charges || {}) })
+      .returning('*');
 
     res.json({ success: true, data: updated });
   } catch (err) {

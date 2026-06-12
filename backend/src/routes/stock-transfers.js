@@ -17,10 +17,14 @@ const router = express.Router();
         reason VARCHAR(50) NOT NULL,
         notes TEXT,
         reference_no VARCHAR(100),
+        from_location VARCHAR(100),
+        to_location VARCHAR(100),
         created_by INT REFERENCES users(id),
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await db.raw('ALTER TABLE stock_transfers ADD COLUMN IF NOT EXISTS from_location VARCHAR(100)');
+    await db.raw('ALTER TABLE stock_transfers ADD COLUMN IF NOT EXISTS to_location VARCHAR(100)');
   } catch (e) {
     console.error('[stock-transfers] table init error:', e.message);
   }
@@ -30,7 +34,7 @@ const VALID_REASONS = ['transfer_in', 'transfer_out', 'damage', 'sample', 'corre
 
 // POST /api/stock-transfers — create a stock adjustment or transfer
 router.post('/', authenticate, authorize('admin', 'warehouse'), async (req, res, next) => {
-  const { itemId, batchId, qty, reason, notes, referenceNo } = req.body;
+  const { itemId, batchId, qty, reason, notes, referenceNo, fromLocation, toLocation } = req.body;
 
   if (!itemId) return res.status(400).json({ success: false, error: 'itemId is required' });
   if (!batchId) return res.status(400).json({ success: false, error: 'batchId is required' });
@@ -78,6 +82,8 @@ router.post('/', authenticate, authorize('admin', 'warehouse'), async (req, res,
         reason,
         notes: notes || null,
         reference_no: referenceNo || null,
+        from_location: fromLocation || null,
+        to_location: toLocation || null,
         created_by: req.user.id
       })
       .returning('*');
@@ -119,7 +125,7 @@ router.post('/', authenticate, authorize('admin', 'warehouse'), async (req, res,
 // GET /api/stock-transfers — paginated history with optional filters
 router.get('/', authenticate, async (req, res, next) => {
   try {
-    const { itemId, from, to, page = 1, limit = 20 } = req.query;
+    const { itemId, from, to, page = 1, limit = 20, fromLocation, toLocation } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
 
     let query = db('stock_transfers')
@@ -136,6 +142,8 @@ router.get('/', authenticate, async (req, res, next) => {
     if (itemId) query = query.where('stock_transfers.item_id', Number(itemId));
     if (from) query = query.where('stock_transfers.created_at', '>=', new Date(from));
     if (to) query = query.where('stock_transfers.created_at', '<=', new Date(to));
+    if (fromLocation) query = query.where('stock_transfers.from_location', fromLocation);
+    if (toLocation) query = query.where('stock_transfers.to_location', toLocation);
 
     const countQuery = query.clone().clearSelect().clearOrder().count('stock_transfers.id as total').first();
     const [{ total }, rows] = await Promise.all([
