@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Nav from '../components/Nav';
 import client from '../api/client';
 import { safeUser } from '../lib/safeUser';
@@ -38,8 +39,10 @@ const styles = {
   itemGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' },
   itemRow: {
     padding: '8px 12px', background: '#f8f9fb', borderRadius: '5px',
-    border: '1px solid #eaeaea', fontSize: '13px', position: 'relative'
+    border: '1px solid #eaeaea', fontSize: '13px', position: 'relative',
+    cursor: 'pointer', transition: 'border-color 0.12s, box-shadow 0.12s, background 0.12s'
   },
+  itemRowHover: { border: '1px solid #2d6a4f', boxShadow: '0 1px 6px rgba(45,106,79,0.16)', background: '#fff' },
   itemRowCustom: { background: '#eef7f0', border: '1px solid #b7dfc4' },
   customBadge: {
     fontSize: '10px', color: '#2d6a4f', background: '#d4edda',
@@ -61,7 +64,22 @@ const styles = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
   },
   modal: { background: '#fff', borderRadius: '8px', width: '460px', padding: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' },
+  detailModal: { background: '#fff', borderRadius: '8px', width: '620px', maxWidth: 'calc(100vw - 32px)', padding: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' },
   modalTitle: { fontSize: '18px', fontWeight: '700', color: '#1a1a2e', margin: '0 0 18px' },
+  detailHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' },
+  detailTitle: { fontSize: '20px', fontWeight: '700', color: '#1a1a2e', margin: 0 },
+  detailSub: { fontSize: '12px', color: '#666', marginTop: '4px' },
+  closeIconBtn: { border: 'none', background: '#f3f4f6', color: '#444', borderRadius: '5px', padding: '5px 9px', cursor: 'pointer', fontSize: '16px', lineHeight: 1 },
+  detailGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px', marginBottom: '14px' },
+  detailBox: { border: '1px solid #e5e7eb', borderRadius: '6px', padding: '10px 12px', background: '#f8f9fb' },
+  detailLabel: { fontSize: '11px', color: '#777', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' },
+  detailValue: { fontSize: '13px', color: '#1a1a2e', fontWeight: '600' },
+  aliasWrap: { display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' },
+  aliasChip: { fontSize: '12px', color: '#334155', background: '#eef2f7', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '3px 8px' },
+  matchList: { border: '1px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden', marginTop: '8px' },
+  matchRow: { display: 'grid', gridTemplateColumns: '100px 1fr 80px', gap: '10px', padding: '8px 10px', borderTop: '1px solid #eef0f3', fontSize: '12px', alignItems: 'center' },
+  matchHead: { background: '#f8f9fb', color: '#666', fontWeight: '700', textTransform: 'uppercase', fontSize: '10px', borderTop: 'none' },
+  detailActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' },
   formLabel: { display: 'block', fontSize: '12px', fontWeight: '600', color: '#444', marginBottom: '5px' },
   formInput: { width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: '5px', fontSize: '14px', marginBottom: '12px', boxSizing: 'border-box', outline: 'none' },
   formActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' },
@@ -73,12 +91,16 @@ const styles = {
 const user = safeUser();
 
 export default function Catalog() {
+  const navigate = useNavigate();
   const [tree, setTree] = useState(null);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [collapsed, setCollapsed] = useState({});
   const [showAdd, setShowAdd] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [matchingItems, setMatchingItems] = useState([]);
+  const [matchingLoading, setMatchingLoading] = useState(false);
 
   function loadCatalog() {
     setError('');
@@ -88,6 +110,26 @@ export default function Catalog() {
   }
 
   useEffect(() => { loadCatalog(); }, []);
+
+  useEffect(() => {
+    if (!selectedItem) {
+      setMatchingItems([]);
+      return;
+    }
+    let cancelled = false;
+    setMatchingLoading(true);
+    client.get('/items', { params: { search: selectedItem.canonical, active: 'all' } })
+      .then(res => {
+        if (!cancelled) setMatchingItems(res.data.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setMatchingItems([]);
+      })
+      .finally(() => {
+        if (!cancelled) setMatchingLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [selectedItem]);
 
   const filtered = useMemo(() => {
     if (!tree) return null;
@@ -122,6 +164,21 @@ export default function Catalog() {
       await loadCatalog();
     } catch (err) {
       alert(err.response?.data?.error || err.message);
+    }
+  }
+
+  function openInItemMaster(name) {
+    navigate(`/items?search=${encodeURIComponent(name)}&active=all`);
+  }
+
+  function openCatalogDetail(item, category, subCategory) {
+    setSelectedItem({ ...item, category, sub_category: subCategory });
+  }
+
+  function handleItemKeyDown(e, item, category, subCategory) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openCatalogDetail(item, category, subCategory);
     }
   }
 
@@ -182,12 +239,28 @@ export default function Catalog() {
                     <div
                       key={it.canonical}
                       style={{ ...styles.itemRow, ...(it.is_custom ? styles.itemRowCustom : {}) }}
+                      role="button"
+                      tabIndex={0}
+                      title={`View details for "${it.canonical}"`}
+                      onClick={() => openCatalogDetail(it, cat.category, sc.sub_category)}
+                      onKeyDown={e => handleItemKeyDown(e, it, cat.category, sc.sub_category)}
+                      onMouseEnter={e => {
+                        Object.assign(e.currentTarget.style, styles.itemRowHover);
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = it.is_custom ? '#b7dfc4' : '#eaeaea';
+                        e.currentTarget.style.boxShadow = 'none';
+                        e.currentTarget.style.background = it.is_custom ? '#eef7f0' : '#f8f9fb';
+                      }}
                     >
                       {it.is_custom && (user.role === 'admin' || it.created_by === user.id) && (
                         <button
                           style={styles.deleteBtn}
                           title="Delete custom item"
-                          onClick={() => handleDelete(it)}
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleDelete(it);
+                          }}
                         >✕</button>
                       )}
                       <div style={styles.itemName}>
@@ -213,6 +286,98 @@ export default function Catalog() {
             onSaved={() => { setShowAdd(false); loadCatalog(); }}
           />
         )}
+
+        {selectedItem && (
+          <CatalogDetailModal
+            item={selectedItem}
+            matches={matchingItems}
+            loading={matchingLoading}
+            onClose={() => setSelectedItem(null)}
+            onOpenItemMaster={() => openInItemMaster(selectedItem.canonical)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CatalogDetailModal({ item, matches, loading, onClose, onOpenItemMaster }) {
+  const aliases = item.aliases || [];
+  return (
+    <div style={styles.modalOverlay} onClick={onClose}>
+      <div style={styles.detailModal} onClick={e => e.stopPropagation()}>
+        <div style={styles.detailHeader}>
+          <div>
+            <p style={styles.detailTitle}>{item.canonical}</p>
+            <div style={styles.detailSub}>{item.category} / {item.sub_category}</div>
+          </div>
+          <button style={styles.closeIconBtn} onClick={onClose} title="Close">x</button>
+        </div>
+
+        <div style={styles.detailGrid}>
+          <div style={styles.detailBox}>
+            <div style={styles.detailLabel}>Category</div>
+            <div style={styles.detailValue}>{item.category}</div>
+          </div>
+          <div style={styles.detailBox}>
+            <div style={styles.detailLabel}>Sub-category</div>
+            <div style={styles.detailValue}>{item.sub_category}</div>
+          </div>
+          <div style={styles.detailBox}>
+            <div style={styles.detailLabel}>Catalog type</div>
+            <div style={styles.detailValue}>{item.is_custom ? 'Custom catalog item' : 'Built-in catalog item'}</div>
+          </div>
+          <div style={styles.detailBox}>
+            <div style={styles.detailLabel}>Aliases</div>
+            <div style={styles.detailValue}>{aliases.length}</div>
+          </div>
+        </div>
+
+        <div style={styles.detailBox}>
+          <div style={styles.detailLabel}>Names this will match</div>
+          {aliases.length ? (
+            <div style={styles.aliasWrap}>
+              <span style={{ ...styles.aliasChip, background: '#dcfce7', borderColor: '#bbf7d0' }}>{item.canonical}</span>
+              {aliases.map(alias => <span key={alias} style={styles.aliasChip}>{alias}</span>)}
+            </div>
+          ) : (
+            <div style={styles.detailValue}>{item.canonical}</div>
+          )}
+        </div>
+
+        <div style={{ ...styles.detailBox, marginTop: '12px' }}>
+          <div style={styles.detailLabel}>Matching Item Master records</div>
+          {loading ? (
+            <div style={{ color: '#777', fontSize: '13px' }}>Checking inventory items...</div>
+          ) : matches.length ? (
+            <div style={styles.matchList}>
+              <div style={{ ...styles.matchRow, ...styles.matchHead }}>
+                <span>Code</span><span>Name</span><span>Stock</span>
+              </div>
+              {matches.slice(0, 8).map(match => (
+                <div key={match.id} style={styles.matchRow}>
+                  <span style={{ fontFamily: 'ui-monospace, monospace', color: '#334155' }}>{match.item_code}</span>
+                  <span>{match.variant_grade || match.sub_category_name}</span>
+                  <span>{Number(match.live_stock_kg || 0).toFixed(2)} {match.unit}</span>
+                </div>
+              ))}
+              {matches.length > 8 && (
+                <div style={{ padding: '8px 10px', fontSize: '12px', color: '#777', borderTop: '1px solid #eef0f3' }}>
+                  {matches.length - 8} more matching records in Item Master
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ color: '#777', fontSize: '13px' }}>
+              No active or inactive inventory item currently matches this catalog name.
+            </div>
+          )}
+        </div>
+
+        <div style={styles.detailActions}>
+          <button style={styles.cancelBtn} onClick={onClose}>Close</button>
+          <button style={styles.saveBtn} onClick={onOpenItemMaster}>View in Item Master</button>
+        </div>
       </div>
     </div>
   );

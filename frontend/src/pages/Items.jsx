@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import client from '../api/client';
 import ItemForm from '../components/ItemForm';
 import Nav from '../components/Nav';
@@ -719,17 +719,21 @@ function ItemThumb({ item, onClick }) {
 
 export default function Items() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const user = safeUser();
+  const initialActive = ['true', 'false', 'all'].includes(searchParams.get('active'))
+    ? searchParams.get('active')
+    : 'true';
 
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [locations, setLocations] = useState([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [tagFilter, setTagFilter] = useState('');
-  const [activeFilter, setActiveFilter] = useState('true'); // 'true' | 'false' | 'all'
+  const [activeFilter, setActiveFilter] = useState(initialActive); // 'true' | 'false' | 'all'
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(false);
